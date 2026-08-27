@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>IRON LOG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #15161A;
+    --bg-elevated: #1D1F24;
+    --bg-card: #24262C;
+    --steel: #3A3D44;
+    --steel-light: #4E525C;
+    --accent: #FF4B3E;      /* iron red */
+    --accent-dim: #7A2B26;
+    --plate: #FFC857;       /* plate amber */
+    --plate-dim: #6B5527;
+    --text: #F3F2EE;
+    --text-dim: #9A9CA5;
+    --text-faint: #5C5F68;
+    --success: #4CB782;
+    --radius: 14px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%; background:var(--bg); overscroll-behavior-y:none;}
+  body{
+    font-family:'Noto Sans KR', sans-serif;
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+  }
+  #app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    background:
+      radial-gradient(ellipse 600px 300px at 50% -10%, rgba(255,75,62,0.10), transparent 60%),
+      var(--bg);
+  }
+  .num{ font-family:'JetBrains Mono', monospace; }
+
+  /* HEADER */
+  header{
+    padding:22px 20px 14px;
+    position:sticky; top:0; z-index:10;
+    background:rgba(21,22,26,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid #26282E;
+  }
+  header .brand{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:34px;
+    letter-spacing:2px;
+    line-height:1;
+    color:var(--text);
+    display:flex; align-items:baseline; gap:8px;
+  }
+  header .brand .dot{ color:var(--accent); }
+  header .date-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:6px;
+  }
+  header .today-date{ color:var(--text-dim); font-size:13px; font-weight:500; }
+  header .streak{
+    font-size:12px; color:var(--plate); font-weight:600;
+    display:flex; align-items:center; gap:4px;
+  }
+
+  main{ flex:1; padding:16px 16px calc(90px + var(--safe-bottom)); }
+  .view{ display:none; }
+  .view.active{ display:block; animation:fadeIn .18s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  /* SECTION LABEL */
+  .section-label{
+    font-size:12px; font-weight:700; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:1.5px;
+    margin:20px 2px 10px;
+  }
+  .section-label:first-child{ margin-top:0; }
+
+  /* CHIP SELECTOR (body parts) */
+  .chip-row{ display:flex; gap:8px; overflow-x:auto; padding:2px 2px 4px; scrollbar-width:none; }
+  .chip-row::-webkit-scrollbar{ display:none; }
+  .chip{
+    flex:0 0 auto;
+    padding:8px 14px;
+    background:var(--bg-card);
+    border:1px solid var(--steel);
+    border-radius:999px;
+    font-size:13px; font-weight:600; color:var(--text-dim);
+    cursor:pointer; user-select:none;
+    transition:all .15s ease;
+    white-space:nowrap;
+  }
+  .chip.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#1A0C0A;
+  }
+  .chip.plate-style.active{ background:var(--plate); border-color:var(--plate); color:#241C05; }
+
+  /* CARD / FORM */
+  .card{
+    background:var(--bg-card);
+    border:1px solid #2C2E35;
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .field{ margin-bottom:12px; }
+  .field label{
+    display:block; font-size:11px; font-weight:700; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;
+  }
+  input[type=text], input[type=number], input[type=date], select{
+    width:100%;
+    background:var(--bg-elevated);
+    border:1px solid var(--steel);
+    border-radius:10px;
+    padding:12px 12px;
+    font-size:15px;
+    color:var(--text);
+    font-family:inherit;
+    outline:none;
+  }
+  input[type=text]:focus, input[type=number]:focus, input[type=date]:focus{
+    border-color:var(--accent);
+  }
+  .row2{ display:flex; gap:10px; }
+  .row2 .field{ flex:1; }
+  input[type=number]{ font-family:'JetBrains Mono', monospace; font-weight:700; }
+
+  .btn{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:13px 16px;
+    border-radius:10px;
+    border:none;
+    font-size:14px; font-weight:700;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .btn-primary{ background:var(--accent); color:#1D0C0A; width:100%; }
+  .btn-primary:active{ transform:scale(0.98); }
+  .btn-ghost{ background:transparent; border:1px solid var(--steel); color:var(--text-dim); }
+  .btn-plate{ background:var(--plate); color:#241C05; }
+  .btn-danger-text{ background:none; border:none; color:var(--text-faint); font-size:12px; cursor:pointer; padding:4px; }
+
+  /* Routine quick chips in log tab */
+  .routine-pick-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
+  .routine-pick{
+    flex:0 0 auto; background:var(--bg-elevated); border:1px solid var(--steel);
+    border-radius:10px; padding:10px 14px; font-size:13px; font-weight:600;
+    color:var(--text); cursor:pointer;
+  }
+  .routine-pick.active{ border-color:var(--plate); color:var(--plate); }
+  .exercise-quick-list{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .exercise-quick{
+    background:var(--bg-elevated); border:1px dashed var(--steel-light);
+    border-radius:8px; padding:8px 12px; font-size:12.5px; color:var(--text-dim);
+    cursor:pointer;
+  }
+  .exercise-quick.selected{ border-style:solid; border-color:var(--accent); color:var(--text); background:var(--accent-dim); }
+
+  /* Today groups */
+  .exercise-group{
+    background:var(--bg-card); border:1px solid #2C2E35; border-radius:var(--radius);
+    padding:14px; margin-bottom:10px;
+  }
+  .exercise-group-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .exercise-group-title{ font-size:15px; font-weight:700; }
+  .bodypart-tag{
+    font-size:10.5px; font-weight:700; color:var(--text-faint);
+    background:var(--bg-elevated); padding:3px 8px; border-radius:6px;
+    text-transform:uppercase; letter-spacing:0.5px; margin-left:6px;
+  }
+  .sets-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .plate-badge{
+    position:relative;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    width:64px; height:64px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #3a2a10, #1c1508 70%);
+    border:3px solid var(--plate);
+    box-shadow:inset 0 0 0 3px #15161A, 0 0 0 1px #000 inset;
+  }
+  .plate-badge .w{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; color:var(--plate); line-height:1; }
+  .plate-badge .r{ font-size:9px; color:var(--text-dim); margin-top:2px; }
+  .plate-badge .del{
+    position:absolute; top:-6px; right:-6px;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--bg); border:1px solid var(--steel);
+    color:var(--text-faint); font-size:11px; line-height:16px; text-align:center;
+    cursor:pointer;
+  }
+
+  /* History */
+  .search-bar{ position:relative; margin-bottom:12px; }
+  .search-bar input{ padding-left:38px; }
+  .search-bar .icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:0.5; }
+
+  .bodypart-section{ margin-bottom:6px; }
+  .bodypart-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 4px; cursor:pointer; user-select:none;
+  }
+  .bodypart-header .left{ display:flex; align-items:center; gap:10px; }
+  .bodypart-header .name{ font-size:16px; font-weight:800; }
+  .bodypart-header .count{ font-size:12px; color:var(--text-faint); font-weight:600; }
+  .bodypart-header .chevron{ transition:transform .2s ease; color:var(--text-faint); }
+  .bodypart-header.open .chevron{ transform:rotate(90deg); }
+  .bodypart-body{ display:none; padding:0 2px 12px; }
+  .bodypart-body.open{ display:block; }
+
+  .history-entry{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--bg-card); border:1px solid #2C2E35; border-radius:12px;
+    padding:12px 14px; margin-bottom:8px;
+  }
+  .history-entry .info .ex-name{ font-weight:700; font-size:14.5px; }
+  .history-entry .info .ex-date{ font-size:11.5px; color:var(--text-faint); margin-top:2px; }
+  .history-entry .sets-mini{ font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--plate); text-align:right; max-width:150px; }
+
+  .empty-state{
+    text-align:center; padding:50px 20px; color:var(--text-faint);
+  }
+  .empty-state .big{ font-size:40px; margin-bottom:10px; }
+  .empty-state .msg{ font-size:14px; line-height:1.6; }
+
+  /* Routines */
+  .routine-card{
+    background:var(--bg-card); border:1px solid #2C2E35; border-radius:var(--radius);
+    padding:16px; margin-bottom:12px;
+  }
+  .routine-card-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+  .routine-card-head .name{ font-size:17px; font-weight:800; }
+  .routine-card-head .meta{ font-size:11.5px; color:var(--text-faint); margin-top:3px; }
+  .routine-ex-list{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .routine-ex-item{
+    font-size:12px; background:var(--bg-elevated); padding:5px 10px; border-radius:7px; color:var(--text-dim);
+  }
+  .routine-card-actions{ display:flex; gap:8px; }
+  .routine-card-actions .btn{ flex:1; padding:9px; font-size:12.5px; }
+
+  .builder-ex-row{
+    display:flex; gap:8px; align-items:center; margin-bottom:8px;
+    background:var(--bg-elevated); padding:8px; border-radius:8px;
+  }
+  .builder-ex-row select{ width:auto; flex:0 0 88px; padding:8px; font-size:12px; }
+  .builder-ex-row input{ flex:1; padding:8px 10px; font-size:13px; }
+  .builder-ex-row .rm{ color:var(--text-faint); cursor:pointer; padding:4px 6px; font-size:16px; }
+
+  /* Bottom nav */
+  nav.bottom{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:480px;
+    background:rgba(21,22,26,0.96); backdrop-filter:blur(12px);
+    border-top:1px solid #26282E;
+    display:flex;
+    padding-bottom:var(--safe-bottom);
+    z-index:20;
+  }
+  nav.bottom button{
+    flex:1; background:none; border:none; padding:12px 4px 10px;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    color:var(--text-faint); cursor:pointer; font-family:inherit;
+  }
+  nav.bottom button.active{ color:var(--accent); }
+  nav.bottom button .lbl{ font-size:11px; font-weight:700; }
+
+  .fab-hint{ font-size:12px; color:var(--text-faint); text-align:center; margin-top:6px; }
+
+  /* Toast */
+  #toast{
+    position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--text); color:#15161A; font-weight:700; font-size:13px;
+    padding:10px 18px; border-radius:999px; opacity:0; transition:all .25s ease;
+    pointer-events:none; z-index:50; white-space:nowrap;
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  ::placeholder{ color:var(--text-faint); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">IRON<span class="dot">·</span>LOG</div>
+    <div class="date-row">
+      <div class="today-date" id="headerDate"></div>
+      <div class="streak" id="headerStreak"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===================== LOG VIEW ===================== -->
+    <section class="view active" id="view-log">
+
+      <div class="section-label">루틴 불러오기</div>
+      <div id="routinePickRow" class="routine-pick-row"></div>
+      <div id="routineExerciseList" class="exercise-quick-list"></div>
+
+      <div class="section-label">세트 기록하기</div>
+      <div class="card">
+        <div class="field">
+          <label>부위</label>
+          <div class="chip-row" id="logBodyPartChips"></div>
+        </div>
+        <div class="field">
+          <label>운동명</label>
+          <input type="text" id="exerciseInput" placeholder="예: 벤치프레스" list="exerciseSuggestions">
+          <datalist id="exerciseSuggestions"></datalist>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>무게 (kg)</label>
+            <input type="number" id="weightInput" placeholder="60" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label>횟수</label>
+            <input type="number" id="repsInput" placeholder="10" inputmode="numeric">
+          </div>
+        </div>
+        <button class="btn btn-primary" id="addSetBtn">+ 세트 추가</button>
+      </div>
+
+      <div class="section-label">오늘 기록 (<span id="todayCount">0</span>세트)</div>
+      <div id="todayList"></div>
+    </section>
+
+    <!-- ===================== HISTORY VIEW ===================== -->
+    <section class="view" id="view-history">
+      <div class="search-bar">
+        <span class="icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="운동명으로 검색">
+      </div>
+      <div class="chip-row" id="historyBodyPartFilter" style="margin-bottom:14px;"></div>
+      <div id="historyList"></div>
+    </section>
+
+    <!-- ===================== ROUTINE VIEW ===================== -->
+    <section class="view" id="view-routine">
+      <button class="btn btn-plate" style="width:100%; margin-bottom:16px;" id="newRoutineBtn">+ 새 루틴 만들기</button>
+      <div id="routineList"></div>
+    </section>
+
+    <!-- ===================== ROUTINE BUILDER (overlay-ish view) ===================== -->
+    <section class="view" id="view-builder">
+      <div class="section-label">루틴 이름</div>
+      <div class="card" style="margin-bottom:16px;">
+        <input type="text" id="builderNameInput" placeholder="예: 가슴/삼두 루틴">
+      </div>
+      <div class="section-label">운동 목록</div>
+      <div id="builderExRows"></div>
+      <button class="btn btn-ghost" style="width:100%; margin:10px 0 20px;" id="builderAddRowBtn">+ 운동 추가</button>
+      <button class="btn btn-primary" id="builderSaveBtn">루틴 저장</button>
+      <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="builderCancelBtn">취소</button>
+    </section>
+  </main>
+
+  <nav class="bottom">
+    <button class="nav-btn active" data-view="log">
+      <span>🏋️</span><span class="lbl">기록</span>
+    </button>
+    <button class="nav-btn" data-view="history">
+      <span>📖</span><span class="lbl">히스토리</span>
+    </button>
+    <button class="nav-btn" data-view="routine">
+      <span>⭐</span><span class="lbl">루틴</span>
+    </button>
+  </nav>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+const BODY_PARTS = ["가슴","등","어깨","팔","다리","복근","유산소","기타"];
+
+let logs = [];       // {id, date:'YYYY-MM-DD', bodyPart, exercise, weight, reps}
+let routines = [];   // {id, name, exercises:[{bodyPart, exercise}]}
+
+let state = {
+  currentView: 'log',
+  logBodyPart: BODY_PARTS[0],
+  activeRoutineId: null,
+  historyBodyPartFilter: 'all',
+  searchQuery: '',
+  editingRoutineId: null,
+  builderExercises: []
+};
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fmtDateKo(dstr){
+  const [y,m,d] = dstr.split('-');
+  return `${parseInt(m)}월 ${parseInt(d)}일`;
+}
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+/* ---------------- STORAGE ---------------- */
+async function loadData(){
+  try{
+    const r = await window.storage.get('logs');
+    logs = r ? JSON.parse(r.value) : [];
+  }catch(e){ logs = []; }
+  try{
+    const r = await window.storage.get('routines');
+    routines = r ? JSON.parse(r.value) : [];
+  }catch(e){ routines = []; }
+}
+async function saveLogs(){
+  try{ await window.storage.set('logs', JSON.stringify(logs)); }
+  catch(e){ showToast('저장 실패, 다시 시도해주세요'); }
+}
+async function saveRoutines(){
+  try{ await window.storage.set('routines', JSON.stringify(routines)); }
+  catch(e){ showToast('저장 실패, 다시 시도해주세요'); }
+}
+
+/* ---------------- HEADER ---------------- */
+function renderHeader(){
+  const d = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  document.getElementById('headerDate').textContent =
+    `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+
+  // streak: consecutive days (including today if logged) with at least one log
+  const dateSet = new Set(logs.map(l=>l.date));
+  let streak = 0;
+  let cur = new Date();
+  if(!dateSet.has(todayStr())){
+    // check yesterday onward; if today not logged yet, streak counts up to yesterday
+    cur.setDate(cur.getDate()-1);
+  }
+  while(true){
+    const ds = cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0');
+    if(dateSet.has(ds)){ streak++; cur.setDate(cur.getDate()-1); }
+    else break;
+  }
+  document.getElementById('headerStreak').textContent = streak>0 ? `🔥 ${streak}일 연속` : '';
+}
+
+/* ---------------- NAV ---------------- */
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    switchView(btn.dataset.view);
+  });
+});
+function switchView(name){
+  state.currentView = name;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===name);
+  });
+  if(name==='history') renderHistory();
+  if(name==='routine') renderRoutineList();
+}
+
+/* ---------------- LOG VIEW ---------------- */
+function renderLogBodyPartChips(){
+  const wrap = document.getElementById('logBodyPartChips');
+  wrap.innerHTML = '';
+  BODY_PARTS.forEach(bp=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (state.logBodyPart===bp ? ' active':'');
+    chip.textContent = bp;
+    chip.addEventListener('click', ()=>{
+      state.logBodyPart = bp;
+      renderLogBodyPartChips();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+function renderRoutinePickRow(){
+  const wrap = document.getElementById('routinePickRow');
+  const exWrap = document.getElementById('routineExerciseList');
+  wrap.innerHTML = '';
+  exWrap.innerHTML = '';
+  if(routines.length===0){
+    wrap.innerHTML = '<div style="font-size:12.5px; color:var(--text-faint); padding:6px 2px;">저장된 루틴이 없어요. 루틴 탭에서 만들어보세요.</div>';
+    return;
+  }
+  routines.forEach(r=>{
+    const chip = document.createElement('div');
+    chip.className = 'routine-pick' + (state.activeRoutineId===r.id ? ' active':'');
+    chip.textContent = r.name;
+    chip.addEventListener('click', ()=>{
+      state.activeRoutineId = (state.activeRoutineId===r.id) ? null : r.id;
+      renderRoutinePickRow();
+    });
+    wrap.appendChild(chip);
+  });
+  if(state.activeRoutineId){
+    const r = routines.find(x=>x.id===state.activeRoutineId);
+    if(r){
+      r.exercises.forEach(ex=>{
+        const q = document.createElement('div');
+        q.className = 'exercise-quick';
+        q.textContent = `${ex.exercise} · ${ex.bodyPart}`;
+        q.addEventListener('click', ()=>{
+          document.getElementById('exerciseInput').value = ex.exercise;
+          state.logBodyPart = ex.bodyPart;
+          renderLogBodyPartChips();
+          document.getElementById('weightInput').focus();
+        });
+        exWrap.appendChild(q);
+      });
+    }
+  }
+}
+
+function renderExerciseSuggestions(){
+  const dl = document.getElementById('exerciseSuggestions');
+  const names = [...new Set(logs.map(l=>l.exercise))];
+  dl.innerHTML = names.map(n=>`<option value="${escapeHtml(n)}">`).join('');
+}
+
+function renderTodayList(){
+  const today = todayStr();
+  const todays = logs.filter(l=>l.date===today);
+  document.getElementById('todayCount').textContent = todays.length;
+  const wrap = document.getElementById('todayList');
+  wrap.innerHTML = '';
+  if(todays.length===0){
+    wrap.innerHTML = `<div class="empty-state"><div class="big">🏋️</div><div class="msg">아직 오늘 기록이 없어요.<br>위에서 첫 세트를 추가해보세요.</div></div>`;
+    return;
+  }
+  // group by exercise, preserve order of first appearance
+  const groups = [];
+  const map = {};
+  todays.forEach(l=>{
+    if(!map[l.exercise]){
+      map[l.exercise] = { exercise:l.exercise, bodyPart:l.bodyPart, sets:[] };
+      groups.push(map[l.exercise]);
+    }
+    map[l.exercise].sets.push(l);
+  });
+  groups.forEach(g=>{
+    const gDiv = document.createElement('div');
+    gDiv.className = 'exercise-group';
+    gDiv.innerHTML = `
+      <div class="exercise-group-head">
+        <div class="exercise-group-title">${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span></div>
+      </div>
+      <div class="sets-row">
+        ${g.sets.map(s=>`
+          <div class="plate-badge" data-id="${s.id}">
+            <div class="del" data-del="${s.id}">✕</div>
+            <div class="w">${s.weight}</div>
+            <div class="r">x${s.reps}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    wrap.appendChild(gDiv);
+  });
+  wrap.querySelectorAll('[data-del]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      const id = el.dataset.del;
+      logs = logs.filter(l=>l.id!==id);
+      await saveLogs();
+      renderAll();
+      showToast('세트를 삭제했어요');
+    });
+  });
+}
+
+document.getElementById('addSetBtn').addEventListener('click', async ()=>{
+  const exercise = document.getElementById('exerciseInput').value.trim();
+  const weight = document.getElementById('weightInput').value;
+  const reps = document.getElementById('repsInput').value;
+  if(!exercise){ showToast('운동명을 입력해주세요'); return; }
+  if(weight==='' || reps===''){ showToast('무게와 횟수를 입력해주세요'); return; }
+  logs.push({
+    id: uid(),
+    date: todayStr(),
+    bodyPart: state.logBodyPart,
+    exercise,
+    weight: Number(weight),
+    reps: Number(reps)
+  });
+  await saveLogs();
+  document.getElementById('weightInput').value = '';
+  document.getElementById('repsInput').value = '';
+  document.getElementById('weightInput').focus();
+  renderAll();
+  showToast('세트가 추가됐어요 💪');
+});
+
+/* ---------------- HISTORY VIEW ---------------- */
+function renderHistoryFilterChips(){
+  const wrap = document.getElementById('historyBodyPartFilter');
+  wrap.innerHTML = '';
+  const allChip = document.createElement('div');
+  allChip.className = 'chip plate-style' + (state.historyBodyPartFilter==='all' ? ' active':'');
+  allChip.textContent = '전체';
+  allChip.addEventListener('click', ()=>{ state.historyBodyPartFilter='all'; renderHistory(); });
+  wrap.appendChild(allChip);
+  BODY_PARTS.forEach(bp=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip plate-style' + (state.historyBodyPartFilter===bp ? ' active':'');
+    chip.textContent = bp;
+    chip.addEventListener('click', ()=>{ state.historyBodyPartFilter=bp; renderHistory(); });
+    wrap.appendChild(chip);
+  });
+}
+
+let openBodyParts = new Set(BODY_PARTS); // default expanded
+
+function renderHistory(){
+  renderHistoryFilterChips();
+  const listWrap = document.getElementById('historyList');
+  listWrap.innerHTML = '';
+
+  const q = state.searchQuery.trim().toLowerCase();
+  let filtered = logs.filter(l=>{
+    if(state.historyBodyPartFilter!=='all' && l.bodyPart!==state.historyBodyPartFilter) return false;
+    if(q && !l.exercise.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if(filtered.length===0){
+    listWrap.innerHTML = `<div class="empty-state"><div class="big">📖</div><div class="msg">조건에 맞는 기록이 없어요.</div></div>`;
+    return;
+  }
+
+  // group by bodyPart -> exercise -> sets, sorted by date desc
+  const byBodyPart = {};
+  filtered.forEach(l=>{
+    if(!byBodyPart[l.bodyPart]) byBodyPart[l.bodyPart] = [];
+    byBodyPart[l.bodyPart].push(l);
+  });
+
+  const orderedParts = BODY_PARTS.filter(bp=>byBodyPart[bp]);
+
+  orderedParts.forEach(bp=>{
+    const entries = byBodyPart[bp];
+    const isOpen = openBodyParts.has(bp);
+
+    const section = document.createElement('div');
+    section.className = 'bodypart-section';
+
+    const header = document.createElement('div');
+    header.className = 'bodypart-header' + (isOpen?' open':'');
+    header.innerHTML = `
+      <div class="left"><span class="name">${bp}</span><span class="count">${entries.length}세트</span></div>
+      <span class="chevron">›</span>
+    `;
+    header.addEventListener('click', ()=>{
+      if(openBodyParts.has(bp)) openBodyParts.delete(bp); else openBodyParts.add(bp);
+      renderHistory();
+    });
+    section.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'bodypart-body' + (isOpen?' open':'');
+
+    // group entries by date+exercise
+    const byDateExercise = {};
+    const order = [];
+    entries.forEach(l=>{
+      const key = l.date+'|'+l.exercise;
+      if(!byDateExercise[key]){ byDateExercise[key] = { date:l.date, exercise:l.exercise, sets:[] }; order.push(key); }
+      byDateExercise[key].sets.push(l);
+    });
+    order.sort((a,b)=> byDateExercise[b].date.localeCompare(byDateExercise[a].date));
+
+    order.forEach(key=>{
+      const g = byDateExercise[key];
+      const setsStr = g.sets.map(s=>`${s.weight}×${s.reps}`).join('  ');
+      const row = document.createElement('div');
+      row.className = 'history-entry';
+      row.innerHTML = `
+        <div class="info">
+          <div class="ex-name">${escapeHtml(g.exercise)}</div>
+          <div class="ex-date">${fmtDateKo(g.date)}</div>
+        </div>
+        <div class="sets-mini">${setsStr}</div>
+      `;
+      body.appendChild(row);
+    });
+
+    section.appendChild(body);
+    listWrap.appendChild(section);
+  });
+}
+
+document.getElementById('searchInput').addEventListener('input', (e)=>{
+  state.searchQuery = e.target.value;
+  renderHistory();
+});
+
+/* ---------------- ROUTINE VIEW ---------------- */
+function renderRoutineList(){
+  const wrap = document.getElementById('routineList');
+  wrap.innerHTML = '';
+  if(routines.length===0){
+    wrap.innerHTML = `<div class="empty-state"><div class="big">⭐</div><div class="msg">아직 만든 루틴이 없어요.<br>자주 하는 운동을 루틴으로 저장해보세요.</div></div>`;
+    return;
+  }
+  routines.forEach(r=>{
+    const card = document.createElement('div');
+    card.className = 'routine-card';
+    card.innerHTML = `
+      <div class="routine-card-head">
+        <div>
+          <div class="name">${escapeHtml(r.name)}</div>
+          <div class="meta">운동 ${r.exercises.length}개</div>
+        </div>
+      </div>
+      <div class="routine-ex-list">
+        ${r.exercises.map(ex=>`<div class="routine-ex-item">${escapeHtml(ex.exercise)} · ${ex.bodyPart}</div>`).join('')}
+      </div>
+      <div class="routine-card-actions">
+        <button class="btn btn-ghost" data-edit="${r.id}">수정</button>
+        <button class="btn btn-ghost" data-del="${r.id}" style="color:var(--accent); border-color:var(--accent-dim);">삭제</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('[data-edit]').forEach(el=>{
+    el.addEventListener('click', ()=> openBuilder(el.dataset.edit));
+  });
+  wrap.querySelectorAll('[data-del]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      routines = routines.filter(r=>r.id!==el.dataset.del);
+      await saveRoutines();
+      renderRoutineList();
+      renderRoutinePickRow();
+      showToast('루틴을 삭제했어요');
+    });
+  });
+}
+
+document.getElementById('newRoutineBtn').addEventListener('click', ()=> openBuilder(null));
+document.getElementById('builderCancelBtn').addEventListener('click', ()=>{
+  switchView('routine');
+});
+
+function openBuilder(routineId){
+  state.editingRoutineId = routineId;
+  const existing = routineId ? routines.find(r=>r.id===routineId) : null;
+  document.getElementById('builderNameInput').value = existing ? existing.name : '';
+  state.builderExercises = existing ? JSON.parse(JSON.stringify(existing.exercises)) : [{bodyPart:BODY_PARTS[0], exercise:''}];
+  renderBuilderRows();
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-builder').classList.add('active');
+}
+
+function renderBuilderRows(){
+  const wrap = document.getElementById('builderExRows');
+  wrap.innerHTML = '';
+  state.builderExercises.forEach((ex, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'builder-ex-row';
+    const options = BODY_PARTS.map(bp=>`<option value="${bp}" ${bp===ex.bodyPart?'selected':''}>${bp}</option>`).join('');
+    row.innerHTML = `
+      <select data-idx="${idx}" class="b-part">${options}</select>
+      <input type="text" data-idx="${idx}" class="b-name" placeholder="운동명" value="${escapeHtml(ex.exercise)}">
+      <div class="rm" data-idx="${idx}">✕</div>
+    `;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll('.b-part').forEach(el=>{
+    el.addEventListener('change', ()=>{ state.builderExercises[el.dataset.idx].bodyPart = el.value; });
+  });
+  wrap.querySelectorAll('.b-name').forEach(el=>{
+    el.addEventListener('input', ()=>{ state.builderExercises[el.dataset.idx].exercise = el.value; });
+  });
+  wrap.querySelectorAll('.rm').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.builderExercises.splice(el.dataset.idx,1);
+      if(state.builderExercises.length===0) state.builderExercises.push({bodyPart:BODY_PARTS[0], exercise:''});
+      renderBuilderRows();
+    });
+  });
+}
+
+document.getElementById('builderAddRowBtn').addEventListener('click', ()=>{
+  state.builderExercises.push({bodyPart:BODY_PARTS[0], exercise:''});
+  renderBuilderRows();
+});
+
+document.getElementById('builderSaveBtn').addEventListener('click', async ()=>{
+  const name = document.getElementById('builderNameInput').value.trim();
+  const exs = state.builderExercises.filter(e=>e.exercise.trim()!=='');
+  if(!name){ showToast('루틴 이름을 입력해주세요'); return; }
+  if(exs.length===0){ showToast('운동을 하나 이상 추가해주세요'); return; }
+  if(state.editingRoutineId){
+    const r = routines.find(r=>r.id===state.editingRoutineId);
+    r.name = name; r.exercises = exs;
+  } else {
+    routines.push({ id: uid(), name, exercises: exs });
+  }
+  await saveRoutines();
+  showToast('루틴이 저장됐어요');
+  switchView('routine');
+});
+
+/* ---------------- HELPERS ---------------- */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function renderAll(){
+  renderHeader();
+  renderLogBodyPartChips();
+  renderRoutinePickRow();
+  renderExerciseSuggestions();
+  renderTodayList();
+  if(state.currentView==='history') renderHistory();
+  if(state.currentView==='routine') renderRoutineList();
+}
+
+/* ---------------- INIT ---------------- */
+(async function init(){
+  await loadData();
+  renderAll();
+})();
+</script>
+</body>
+</html>
