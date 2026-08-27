@@ -88,6 +88,14 @@
   .section-label .link{
     text-transform:none; letter-spacing:0; font-size:12.5px; color:var(--accent); cursor:pointer; font-weight:700;
   }
+  .label-with-count{ display:flex; align-items:center; gap:7px; }
+  .count-pill{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:12px; font-weight:800; color:var(--plate);
+    background:var(--bg-elevated); border:1px solid var(--steel);
+    padding:2px 9px; border-radius:999px;
+    text-transform:none; letter-spacing:0;
+  }
 
   /* CHIP SELECTOR (body parts) */
   .chip-row{ display:flex; gap:8px; overflow-x:auto; padding:2px 2px 4px; scrollbar-width:none; }
@@ -180,7 +188,7 @@
     padding:14px; margin-bottom:10px;
   }
   .exercise-group-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-  .exercise-group-title{ font-size:15px; font-weight:700; }
+  .exercise-group-title{ font-size:16.5px; font-weight:700; }
   .bodypart-tag{
     font-size:10.5px; font-weight:700; color:var(--text-faint);
     background:var(--bg-elevated); padding:3px 8px; border-radius:6px;
@@ -200,6 +208,36 @@
   .plate-badge .w{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px; color:var(--plate); line-height:1; }
   .plate-badge .r{ font-size:9px; color:var(--text-dim); margin-top:2px; }
   .plate-badge .s{ font-size:8.5px; color:var(--text-faint); margin-top:1px; }
+
+  .entries-col{ display:flex; flex-direction:column; }
+  .entry-row{
+    display:flex; align-items:center; gap:12px;
+    padding:9px 2px; border-bottom:1px solid #2A2C33; cursor:pointer;
+  }
+  .entry-row:last-child{ border-bottom:none; }
+  .mini-plate{
+    flex:0 0 auto; width:54px; height:54px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #3a2a10, #1c1508 70%);
+    border:3px solid var(--plate);
+    box-shadow:inset 0 0 0 3px #15161A, 0 0 0 1px #000 inset;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .mini-plate.empty{ border-color:var(--steel-light); }
+  .mini-plate .w{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px; color:var(--plate); line-height:1; }
+  .mini-plate.empty .w{ color:var(--text-faint); }
+  .mini-plate .r{ font-size:9px; color:var(--text-dim); margin-top:1px; }
+  .entry-mid{ flex:1; min-width:0; }
+  .entry-sets{ font-size:14.5px; color:var(--text-dim); font-weight:600; }
+  .entry-memo{ font-size:13.5px; color:var(--text-faint); margin-top:3px; line-height:1.4; word-break:break-word; }
+  .mini-plate-pair{ display:flex; align-items:center; gap:4px; flex:0 0 auto; }
+  .ss-plus{ color:var(--text-faint); font-size:13px; font-weight:700; }
+  .ss-tag{
+    font-size:10px; font-weight:800; color:var(--bg); background:var(--plate);
+    padding:2px 7px; border-radius:6px; margin-left:6px; vertical-align:middle;
+    text-transform:uppercase; letter-spacing:0.5px;
+  }
+  #supersetToggle.active{ background:var(--plate); border-color:var(--plate); color:#241C05; }
+  #editSupersetToggle.active{ background:var(--plate); border-color:var(--plate); color:#241C05; }
 
   /* History */
   .search-bar{ position:relative; margin-bottom:12px; }
@@ -227,9 +265,9 @@
     background:var(--bg-card); border:1px solid #2C2E35; border-radius:12px;
     padding:12px 14px; margin-bottom:8px; cursor:pointer;
   }
-  .history-entry .info .ex-name{ font-weight:700; font-size:14.5px; display:flex; align-items:center; }
-  .history-entry .info .ex-detail{ font-size:12px; color:var(--text-faint); margin-top:3px; }
-  .history-entry .stat{ font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--plate); text-align:right; font-weight:700; }
+  .history-entry .info .ex-name{ font-weight:700; font-size:16px; display:flex; align-items:center; }
+  .history-entry .info .ex-detail{ font-size:13.5px; color:var(--text-faint); margin-top:4px; }
+  .history-entry .stat{ font-family:'JetBrains Mono',monospace; font-size:14.5px; color:var(--plate); text-align:right; font-weight:700; }
 
   .empty-state{
     text-align:center; padding:50px 20px; color:var(--text-faint);
@@ -373,32 +411,72 @@
           <input type="date" id="dateInput">
         </div>
         <div class="field">
-          <label>부위</label>
+          <label>부위 <span id="logBodyPartLabelTag" style="color:var(--text-faint); font-weight:500; text-transform:none;"></span></label>
           <div class="chip-row" id="logBodyPartChips"></div>
         </div>
         <div class="field">
-          <label>운동명</label>
+          <label>운동명 <span id="logExerciseLabelTag" style="color:var(--text-faint); font-weight:500; text-transform:none;"></span></label>
           <input type="text" id="exerciseInput" placeholder="예: 벤치프레스" list="exerciseSuggestions">
           <datalist id="exerciseSuggestions"></datalist>
         </div>
-        <div class="row3">
+        <div class="row2">
           <div class="field">
-            <label>무게 (kg)</label>
+            <label>무게 (kg) <span style="color:var(--text-faint); font-weight:500; text-transform:none;">선택</span></label>
             <input type="number" id="weightInput" placeholder="60" inputmode="decimal">
           </div>
           <div class="field">
-            <label>횟수</label>
+            <label>횟수 <span style="color:var(--text-faint); font-weight:500; text-transform:none;">선택</span></label>
             <input type="number" id="repsInput" placeholder="10" inputmode="numeric">
           </div>
+        </div>
+
+        <div class="chip-row" style="margin-bottom:4px;">
+          <div class="chip" id="supersetToggle">🔗 슈퍼세트로 묶기</div>
+        </div>
+
+        <div id="supersetFields" style="display:none; margin-top:6px; padding-top:12px; border-top:1px dashed var(--steel);">
+          <div class="field" style="margin-bottom:8px;">
+            <label style="color:var(--plate);">두 번째 운동</label>
+          </div>
           <div class="field">
-            <label>세트수</label>
-            <input type="number" id="setsInput" placeholder="3" inputmode="numeric" value="1">
+            <label>부위 (운동2)</label>
+            <div class="chip-row" id="ssBodyPartChips"></div>
+          </div>
+          <div class="field">
+            <label>운동명 (운동2)</label>
+            <input type="text" id="ssExerciseInput" placeholder="예: 벤트오버 로우" list="exerciseSuggestions">
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>무게 (kg) <span style="color:var(--text-faint); font-weight:500; text-transform:none;">선택</span></label>
+              <input type="number" id="ssWeightInput" placeholder="40" inputmode="decimal">
+            </div>
+            <div class="field">
+              <label>횟수 <span style="color:var(--text-faint); font-weight:500; text-transform:none;">선택</span></label>
+              <input type="number" id="ssRepsInput" placeholder="10" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>세트수 <span style="color:var(--text-faint); font-weight:500; text-transform:none;">선택</span></label>
+            <input type="number" id="setsInput" placeholder="3" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label>메모 <span style="color:var(--text-faint); font-weight:500; text-transform:none;">선택</span></label>
+            <input type="text" id="memoInput" placeholder="예: 폼 신경쓰기">
           </div>
         </div>
         <button class="btn btn-primary" id="addSetBtn">+ 기록 추가</button>
       </div>
 
-      <div class="section-label"><span id="logListTitle">오늘 기록</span> (<span id="todayCount">0</span>)</div>
+      <div class="section-label">
+        <span class="label-with-count">
+          <span id="logListTitle">오늘 기록</span>
+          <span class="count-pill">🏋️‍♀️ <span id="todayCount">0</span></span>
+        </span>
+      </div>
       <div id="todayList"></div>
     </section>
 
@@ -445,9 +523,9 @@
         </div>
         <div class="field">
           <label>운동명</label>
-          <input type="text" id="editExerciseInput" placeholder="운동명">
+          <input type="text" id="editExerciseInput" placeholder="운동명" list="exerciseSuggestions">
         </div>
-        <div class="row3">
+        <div class="row2">
           <div class="field">
             <label>무게 (kg)</label>
             <input type="number" id="editWeightInput">
@@ -456,9 +534,44 @@
             <label>횟수</label>
             <input type="number" id="editRepsInput">
           </div>
+        </div>
+
+        <div class="chip-row" style="margin-bottom:4px;">
+          <div class="chip" id="editSupersetToggle">🔗 슈퍼세트로 묶기</div>
+        </div>
+
+        <div id="editSupersetFields" style="display:none; margin-top:6px; padding-top:12px; border-top:1px dashed var(--steel);">
+          <div class="field" style="margin-bottom:8px;">
+            <label style="color:var(--plate);">두 번째 운동</label>
+          </div>
+          <div class="field">
+            <label>부위 (운동2)</label>
+            <div class="chip-row" id="editSsBodyPartChips"></div>
+          </div>
+          <div class="field">
+            <label>운동명 (운동2)</label>
+            <input type="text" id="editSsExerciseInput" placeholder="운동명" list="exerciseSuggestions">
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>무게 (kg)</label>
+              <input type="number" id="editSsWeightInput">
+            </div>
+            <div class="field">
+              <label>횟수</label>
+              <input type="number" id="editSsRepsInput">
+            </div>
+          </div>
+        </div>
+
+        <div class="row2">
           <div class="field">
             <label>세트수</label>
             <input type="number" id="editSetsInput">
+          </div>
+          <div class="field">
+            <label>메모</label>
+            <input type="text" id="editMemoInput" placeholder="메모">
           </div>
         </div>
       </div>
@@ -522,7 +635,11 @@ let state = {
   editingRoutineId: null,
   builderExercises: [],
   editingEntryId: null,
-  editBodyPart: BODY_PARTS[0]
+  editBodyPart: BODY_PARTS[0],
+  supersetActive: false,
+  ssBodyPart: BODY_PARTS[0],
+  editSupersetActive: false,
+  editSsBodyPart: BODY_PARTS[0]
 };
 
 function todayStr(){
@@ -566,7 +683,13 @@ async function loadData(){
       logs = []; routines = [];
       await setDoc(dataRef(syncCode), { logs: [], routines: [], updatedAt: Date.now() });
     }
-    logs.forEach(l=>{ if(l.sets===undefined) l.sets = 1; });
+    logs.forEach(l=>{
+      if(l.sets===undefined) l.sets = 1; // 기존(구버전) 데이터는 세트수 1로 간주
+      if(l.weight===undefined) l.weight = null;
+      if(l.reps===undefined) l.reps = null;
+      if(l.memo===undefined) l.memo = '';
+      if(l.superset===undefined) l.superset = null;
+    });
   }catch(e){
     console.error(e);
     showToast('불러오기 실패 - 인터넷 연결 또는 Firebase 설정을 확인하세요');
@@ -692,6 +815,52 @@ function renderLogBodyPartChips(){
   });
 }
 
+function renderSsBodyPartChips(){
+  const wrap = document.getElementById('ssBodyPartChips');
+  wrap.innerHTML = '';
+  BODY_PARTS.forEach(bp=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (state.ssBodyPart===bp ? ' active':'');
+    chip.textContent = bp;
+    chip.addEventListener('click', ()=>{
+      state.ssBodyPart = bp;
+      renderSsBodyPartChips();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+document.getElementById('supersetToggle').addEventListener('click', ()=>{
+  state.supersetActive = !state.supersetActive;
+  document.getElementById('supersetToggle').classList.toggle('active', state.supersetActive);
+  document.getElementById('supersetFields').style.display = state.supersetActive ? 'block' : 'none';
+  document.getElementById('logBodyPartLabelTag').textContent = state.supersetActive ? '(운동1)' : '';
+  document.getElementById('logExerciseLabelTag').textContent = state.supersetActive ? '(운동1)' : '';
+  if(state.supersetActive) renderSsBodyPartChips();
+});
+
+function renderEditSsBodyPartChips(){
+  const wrap = document.getElementById('editSsBodyPartChips');
+  wrap.innerHTML = '';
+  BODY_PARTS.forEach(bp=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (state.editSsBodyPart===bp ? ' active':'');
+    chip.textContent = bp;
+    chip.addEventListener('click', ()=>{
+      state.editSsBodyPart = bp;
+      renderEditSsBodyPartChips();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+document.getElementById('editSupersetToggle').addEventListener('click', ()=>{
+  state.editSupersetActive = !state.editSupersetActive;
+  document.getElementById('editSupersetToggle').classList.toggle('active', state.editSupersetActive);
+  document.getElementById('editSupersetFields').style.display = state.editSupersetActive ? 'block' : 'none';
+  if(state.editSupersetActive) renderEditSsBodyPartChips();
+});
+
 function renderRoutinePickRow(){
   const wrap = document.getElementById('routinePickRow');
   const exWrap = document.getElementById('routineExerciseList');
@@ -732,8 +901,19 @@ function renderRoutinePickRow(){
 
 function renderExerciseSuggestions(){
   const dl = document.getElementById('exerciseSuggestions');
-  const names = [...new Set(logs.map(l=>l.exercise))];
-  dl.innerHTML = names.map(n=>`<option value="${escapeHtml(n)}">`).join('');
+  const names = new Set(logs.map(l=>l.exercise));
+  logs.forEach(l=>{ if(l.superset && l.superset.exercise) names.add(l.superset.exercise); });
+  dl.innerHTML = [...names].map(n=>`<option value="${escapeHtml(n)}">`).join('');
+}
+
+function miniPlateHtml(weight){
+  const hasWeight = weight!==null && weight!==undefined && weight!=='';
+  return `
+    <div class="mini-plate${hasWeight?'':' empty'}">
+      <div class="w">${hasWeight ? weight : '–'}</div>
+      <div class="r">${hasWeight ? 'kg' : ''}</div>
+    </div>
+  `;
 }
 
 function renderTodayList(){
@@ -749,36 +929,55 @@ function renderTodayList(){
     wrap.innerHTML = `<div class="empty-state"><div class="big">🏋️</div><div class="msg">${isToday? '아직 오늘 기록이 없어요.' : '이 날짜의 기록이 없어요.'}<br>위에서 기록을 추가해보세요.</div></div>`;
     return;
   }
-  // group by exercise, preserve order of first appearance
+  // group by exercise (슈퍼세트는 조합별로 별도 그룹), preserve order of first appearance
   const groups = [];
   const map = {};
   dayLogs.forEach(l=>{
-    if(!map[l.exercise]){
-      map[l.exercise] = { exercise:l.exercise, bodyPart:l.bodyPart, entries:[] };
-      groups.push(map[l.exercise]);
+    const key = l.superset ? `${l.exercise}__+__${l.superset.exercise}` : l.exercise;
+    if(!map[key]){
+      map[key] = { key, exercise:l.exercise, bodyPart:l.bodyPart, superset: l.superset ? {exercise:l.superset.exercise, bodyPart:l.superset.bodyPart} : null, entries:[] };
+      groups.push(map[key]);
     }
-    map[l.exercise].entries.push(l);
+    map[key].entries.push(l);
   });
   groups.forEach(g=>{
     const gDiv = document.createElement('div');
     gDiv.className = 'exercise-group';
+    const titleHtml = g.superset
+      ? `${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span> <span style="color:var(--text-faint); margin:0 2px;">＋</span> ${escapeHtml(g.superset.exercise)}<span class="bodypart-tag">${g.superset.bodyPart}</span>`
+      : `${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span>`;
     gDiv.innerHTML = `
       <div class="exercise-group-head">
-        <div class="exercise-group-title">${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span></div>
+        <div class="exercise-group-title">${titleHtml}${g.superset ? '<span class="ss-tag">슈퍼세트</span>' : ''}</div>
       </div>
-      <div class="sets-row">
-        ${g.entries.map(s=>`
-          <div class="plate-badge" data-id="${s.id}">
-            <div class="w">${s.weight}</div>
-            <div class="r">×${s.reps}</div>
-            <div class="s">${s.sets}세트</div>
+      <div class="entries-col">
+        ${g.entries.map(s=>{
+          const hasReps = s.reps!==null && s.reps!==undefined && s.reps!=='';
+          const hasSets = s.sets!==null && s.sets!==undefined && s.sets!=='';
+          const summary = [
+            hasSets ? `${s.sets}세트` : null,
+            hasReps ? `${s.reps}회` : null
+          ].filter(Boolean).join(' · ') || '세부 기록 없음';
+          const ssSummary = s.superset
+            ? [ (s.superset.reps!==null && s.superset.reps!==undefined && s.superset.reps!=='') ? `${s.superset.reps}회` : null ].filter(Boolean).join(' · ')
+            : '';
+          return `
+          <div class="entry-row" data-id="${s.id}">
+            <div class="mini-plate-pair">
+              ${miniPlateHtml(s.weight)}
+              ${s.superset ? '<span class="ss-plus">＋</span>' + miniPlateHtml(s.superset.weight) : ''}
+            </div>
+            <div class="entry-mid">
+              <div class="entry-sets">${summary}${s.superset && ssSummary ? ` <span style="color:var(--text-faint);">(운동2: ${ssSummary})</span>` : ''}</div>
+              ${s.memo ? `<div class="entry-memo">📝 ${escapeHtml(s.memo)}</div>` : ''}
+            </div>
           </div>
-        `).join('')}
+        `}).join('')}
       </div>
     `;
     wrap.appendChild(gDiv);
   });
-  wrap.querySelectorAll('.plate-badge').forEach(el=>{
+  wrap.querySelectorAll('.entry-row').forEach(el=>{
     el.addEventListener('click', ()=> openEdit(el.dataset.id));
   });
 }
@@ -792,25 +991,45 @@ document.getElementById('addSetBtn').addEventListener('click', async ()=>{
   const exercise = document.getElementById('exerciseInput').value.trim();
   const weight = document.getElementById('weightInput').value;
   const reps = document.getElementById('repsInput').value;
-  const sets = document.getElementById('setsInput').value || '1';
+  const sets = document.getElementById('setsInput').value;
+  const memo = document.getElementById('memoInput').value.trim();
   if(!exercise){ showToast('운동명을 입력해주세요'); return; }
-  if(weight==='' || reps===''){ showToast('무게와 횟수를 입력해주세요'); return; }
+
+  let superset = null;
+  if(state.supersetActive){
+    const ssExercise = document.getElementById('ssExerciseInput').value.trim();
+    if(!ssExercise){ showToast('두 번째 운동명을 입력하거나 슈퍼세트를 꺼주세요'); return; }
+    const ssWeight = document.getElementById('ssWeightInput').value;
+    const ssReps = document.getElementById('ssRepsInput').value;
+    superset = {
+      bodyPart: state.ssBodyPart,
+      exercise: ssExercise,
+      weight: ssWeight==='' ? null : Number(ssWeight),
+      reps: ssReps==='' ? null : Number(ssReps)
+    };
+  }
+
   logs.push({
     id: uid(),
     date: state.selectedDate,
     bodyPart: state.logBodyPart,
     exercise,
-    weight: Number(weight),
-    reps: Number(reps),
-    sets: Number(sets) || 1
+    weight: weight==='' ? null : Number(weight),
+    reps: reps==='' ? null : Number(reps),
+    sets: sets==='' ? null : Number(sets),
+    memo,
+    superset
   });
   await saveLogs();
   document.getElementById('weightInput').value = '';
   document.getElementById('repsInput').value = '';
-  document.getElementById('setsInput').value = '1';
+  document.getElementById('setsInput').value = '';
+  document.getElementById('memoInput').value = '';
+  document.getElementById('ssWeightInput').value = '';
+  document.getElementById('ssRepsInput').value = '';
   document.getElementById('weightInput').focus();
   renderAll();
-  showToast('기록이 추가됐어요 💪');
+  showToast(superset ? '슈퍼세트 기록이 추가됐어요 💪' : '기록이 추가됐어요 💪');
 });
 
 /* ---------------- EDIT ENTRY VIEW ---------------- */
@@ -836,10 +1055,28 @@ function openEdit(entryId){
   state.editBodyPart = entry.bodyPart;
   document.getElementById('editDateInput').value = entry.date;
   document.getElementById('editExerciseInput').value = entry.exercise;
-  document.getElementById('editWeightInput').value = entry.weight;
-  document.getElementById('editRepsInput').value = entry.reps;
-  document.getElementById('editSetsInput').value = entry.sets;
+  document.getElementById('editWeightInput').value = (entry.weight===null || entry.weight===undefined) ? '' : entry.weight;
+  document.getElementById('editRepsInput').value = (entry.reps===null || entry.reps===undefined) ? '' : entry.reps;
+  document.getElementById('editSetsInput').value = (entry.sets===null || entry.sets===undefined) ? '' : entry.sets;
+  document.getElementById('editMemoInput').value = entry.memo || '';
   renderEditBodyPartChips();
+
+  state.editSupersetActive = !!entry.superset;
+  document.getElementById('editSupersetToggle').classList.toggle('active', state.editSupersetActive);
+  document.getElementById('editSupersetFields').style.display = state.editSupersetActive ? 'block' : 'none';
+  if(entry.superset){
+    state.editSsBodyPart = entry.superset.bodyPart;
+    document.getElementById('editSsExerciseInput').value = entry.superset.exercise || '';
+    document.getElementById('editSsWeightInput').value = (entry.superset.weight===null || entry.superset.weight===undefined) ? '' : entry.superset.weight;
+    document.getElementById('editSsRepsInput').value = (entry.superset.reps===null || entry.superset.reps===undefined) ? '' : entry.superset.reps;
+  } else {
+    state.editSsBodyPart = BODY_PARTS[0];
+    document.getElementById('editSsExerciseInput').value = '';
+    document.getElementById('editSsWeightInput').value = '';
+    document.getElementById('editSsRepsInput').value = '';
+  }
+  renderEditSsBodyPartChips();
+
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-edit').classList.add('active');
 }
@@ -852,15 +1089,32 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   const weight = document.getElementById('editWeightInput').value;
   const reps = document.getElementById('editRepsInput').value;
   const sets = document.getElementById('editSetsInput').value;
+  const memo = document.getElementById('editMemoInput').value.trim();
   if(!exercise){ showToast('운동명을 입력해주세요'); return; }
   if(!date){ showToast('날짜를 선택해주세요'); return; }
-  if(weight==='' || reps===''){ showToast('무게와 횟수를 입력해주세요'); return; }
+
+  let superset = null;
+  if(state.editSupersetActive){
+    const ssExercise = document.getElementById('editSsExerciseInput').value.trim();
+    if(!ssExercise){ showToast('두 번째 운동명을 입력하거나 슈퍼세트를 꺼주세요'); return; }
+    const ssWeight = document.getElementById('editSsWeightInput').value;
+    const ssReps = document.getElementById('editSsRepsInput').value;
+    superset = {
+      bodyPart: state.editSsBodyPart,
+      exercise: ssExercise,
+      weight: ssWeight==='' ? null : Number(ssWeight),
+      reps: ssReps==='' ? null : Number(ssReps)
+    };
+  }
+
   entry.exercise = exercise;
   entry.date = date;
   entry.bodyPart = state.editBodyPart;
-  entry.weight = Number(weight);
-  entry.reps = Number(reps);
-  entry.sets = Number(sets) || 1;
+  entry.weight = weight==='' ? null : Number(weight);
+  entry.reps = reps==='' ? null : Number(reps);
+  entry.sets = sets==='' ? null : Number(sets);
+  entry.memo = memo;
+  entry.superset = superset;
   await saveLogs();
   showToast('수정됐어요');
   backFromEdit();
@@ -914,8 +1168,15 @@ function renderHistory(){
 
   const q = state.searchQuery.trim().toLowerCase();
   let filtered = logs.filter(l=>{
-    if(state.historyBodyPartFilter!=='all' && l.bodyPart!==state.historyBodyPartFilter) return false;
-    if(q && !l.exercise.toLowerCase().includes(q)) return false;
+    const matchesBodyPart = state.historyBodyPartFilter==='all'
+      || l.bodyPart===state.historyBodyPartFilter
+      || (l.superset && l.superset.bodyPart===state.historyBodyPartFilter);
+    if(!matchesBodyPart) return false;
+    if(q){
+      const matchesSearch = l.exercise.toLowerCase().includes(q)
+        || (l.superset && l.superset.exercise.toLowerCase().includes(q));
+      if(!matchesSearch) return false;
+    }
     return true;
   });
 
@@ -939,7 +1200,7 @@ function renderHistory(){
   dates.forEach(date=>{
     const entries = byDate[date];
     const isOpen = openDates.has(date);
-    const totalSets = entries.reduce((sum,e)=>sum+e.sets,0);
+    const totalSets = entries.reduce((sum,e)=>sum+(e.sets||0),0);
     const exerciseCount = new Set(entries.map(e=>e.exercise)).size;
 
     const section = document.createElement('div');
@@ -964,14 +1225,33 @@ function renderHistory(){
     body.className = 'date-body' + (isOpen?' open':'');
 
     entries.forEach(l=>{
+      const hasWeight = l.weight!==null && l.weight!==undefined && l.weight!=='';
+      const hasReps = l.reps!==null && l.reps!==undefined && l.reps!=='';
+      const hasSets = l.sets!==null && l.sets!==undefined && l.sets!=='';
+      const detail = [
+        hasSets ? `${l.sets}세트` : null,
+        hasReps ? `${l.reps}회` : null
+      ].filter(Boolean).join(' · ') || '상세 없음';
+
+      const nameHtml = l.superset
+        ? `${escapeHtml(l.exercise)}<span class="bodypart-tag">${l.bodyPart}</span> <span style="color:var(--text-faint);">＋</span> ${escapeHtml(l.superset.exercise)}<span class="bodypart-tag">${l.superset.bodyPart}</span><span class="ss-tag">슈퍼세트</span>`
+        : `${escapeHtml(l.exercise)}<span class="bodypart-tag">${l.bodyPart}</span>`;
+
+      let statHtml = hasWeight ? `${l.weight}kg` : '–';
+      if(l.superset){
+        const ssHasWeight = l.superset.weight!==null && l.superset.weight!==undefined && l.superset.weight!=='';
+        statHtml += `<div style="font-size:11px; color:var(--text-faint); margin-top:3px;">운동2: ${ssHasWeight ? l.superset.weight+'kg' : '–'}</div>`;
+      }
+
       const row = document.createElement('div');
       row.className = 'history-entry';
       row.innerHTML = `
         <div class="info">
-          <div class="ex-name">${escapeHtml(l.exercise)}<span class="bodypart-tag">${l.bodyPart}</span></div>
-          <div class="ex-detail">${l.sets}세트 · ${l.reps}회</div>
+          <div class="ex-name">${nameHtml}</div>
+          <div class="ex-detail">${detail}</div>
+          ${l.memo ? `<div class="ex-detail" style="margin-top:3px;">📝 ${escapeHtml(l.memo)}</div>` : ''}
         </div>
-        <div class="stat">${l.weight}kg</div>
+        <div class="stat">${statHtml}</div>
       `;
       row.addEventListener('click', ()=> openEdit(l.id));
       body.appendChild(row);
