@@ -265,9 +265,17 @@
     background:var(--bg-card); border:1px solid #2C2E35; border-radius:12px;
     padding:12px 14px; margin-bottom:8px; cursor:pointer;
   }
-  .history-entry .info .ex-name{ font-weight:700; font-size:16px; display:flex; align-items:center; }
+  .history-entry.history-entry-ss{ align-items:flex-start; }
+  .history-entry .info .ex-name{ font-weight:700; font-size:16px; display:flex; align-items:center; flex-wrap:wrap; row-gap:4px; }
   .history-entry .info .ex-detail{ font-size:13.5px; color:var(--text-faint); margin-top:4px; }
   .history-entry .stat{ font-family:'JetBrains Mono',monospace; font-size:14.5px; color:var(--plate); text-align:right; font-weight:700; }
+  .ss-lines{ display:flex; flex-direction:column; gap:4px; margin-top:8px; }
+  .ss-line{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--bg-elevated); border-radius:8px; padding:6px 10px;
+  }
+  .ss-line-ex{ font-size:13px; color:var(--text-dim); font-weight:600; }
+  .ss-line-stat{ font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--plate); font-weight:700; }
 
   .empty-state{
     text-align:center; padding:50px 20px; color:var(--text-faint);
@@ -1228,32 +1236,48 @@ function renderHistory(){
       const hasWeight = l.weight!==null && l.weight!==undefined && l.weight!=='';
       const hasReps = l.reps!==null && l.reps!==undefined && l.reps!=='';
       const hasSets = l.sets!==null && l.sets!==undefined && l.sets!=='';
-      const detail = [
-        hasReps ? `${l.reps}회` : null,
-        hasSets ? `${l.sets}세트` : null
-      ].filter(Boolean).join(' · ') || '상세 없음';
-
-      const nameHtml = l.superset
-        ? `${escapeHtml(l.exercise)}<span class="bodypart-tag">${l.bodyPart}</span> <span style="color:var(--text-faint);">＋</span> ${escapeHtml(l.superset.exercise)}<span class="bodypart-tag">${l.superset.bodyPart}</span><span class="ss-tag">슈퍼세트</span>`
-        : `${escapeHtml(l.exercise)}<span class="bodypart-tag">${l.bodyPart}</span>`;
-
-      let statHtml = hasWeight ? `${l.weight}kg` : '–';
-      if(l.superset){
-        const ssHasWeight = l.superset.weight!==null && l.superset.weight!==undefined && l.superset.weight!=='';
-        statHtml += `<div style="font-size:11px; color:var(--text-faint); margin-top:3px;">운동2: ${ssHasWeight ? l.superset.weight+'kg' : '–'}</div>`;
-      }
 
       const row = document.createElement('div');
-      row.className = 'history-entry';
-      row.innerHTML = `
-        <div class="info">
-          <div class="ex-name">${nameHtml}</div>
-          <div class="ex-detail">${detail}</div>
-          ${l.memo ? `<div class="ex-detail" style="margin-top:3px;">📝 ${escapeHtml(l.memo)}</div>` : ''}
-        </div>
-        <div class="stat">${statHtml}</div>
-      `;
       row.addEventListener('click', ()=> openEdit(l.id));
+
+      if(l.superset){
+        const ssHasWeight = l.superset.weight!==null && l.superset.weight!==undefined && l.superset.weight!=='';
+        const ssHasReps = l.superset.reps!==null && l.superset.reps!==undefined && l.superset.reps!=='';
+        const nameHtml = `${escapeHtml(l.exercise)}<span class="bodypart-tag">${l.bodyPart}</span> <span style="color:var(--text-faint);">＋</span> ${escapeHtml(l.superset.exercise)}<span class="bodypart-tag">${l.superset.bodyPart}</span><span class="ss-tag">슈퍼세트</span>`;
+
+        row.className = 'history-entry history-entry-ss';
+        row.innerHTML = `
+          <div class="info" style="width:100%;">
+            <div class="ex-name">${nameHtml}</div>
+            <div class="ss-lines">
+              <div class="ss-line">
+                <span class="ss-line-ex">${escapeHtml(l.exercise)}</span>
+                <span class="ss-line-stat">${hasWeight ? l.weight+'kg' : '–'} · ${hasReps ? l.reps+'회' : '–'}</span>
+              </div>
+              <div class="ss-line">
+                <span class="ss-line-ex">${escapeHtml(l.superset.exercise)}</span>
+                <span class="ss-line-stat">${ssHasWeight ? l.superset.weight+'kg' : '–'} · ${ssHasReps ? l.superset.reps+'회' : '–'}</span>
+              </div>
+            </div>
+            ${hasSets ? `<div class="ex-detail" style="margin-top:5px;">${l.sets}세트</div>` : ''}
+            ${l.memo ? `<div class="ex-detail" style="margin-top:3px;">📝 ${escapeHtml(l.memo)}</div>` : ''}
+          </div>
+        `;
+      } else {
+        const detail = [
+          hasReps ? `${l.reps}회` : null,
+          hasSets ? `${l.sets}세트` : null
+        ].filter(Boolean).join(' · ') || '상세 없음';
+        row.className = 'history-entry';
+        row.innerHTML = `
+          <div class="info">
+            <div class="ex-name">${escapeHtml(l.exercise)}<span class="bodypart-tag">${l.bodyPart}</span></div>
+            <div class="ex-detail">${detail}</div>
+            ${l.memo ? `<div class="ex-detail" style="margin-top:3px;">📝 ${escapeHtml(l.memo)}</div>` : ''}
+          </div>
+          <div class="stat">${hasWeight ? l.weight+'kg' : '–'}</div>
+        `;
+      }
       body.appendChild(row);
     });
 
