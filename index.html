@@ -82,8 +82,12 @@
     font-size:12px; font-weight:700; color:var(--text-faint);
     text-transform:uppercase; letter-spacing:1.5px;
     margin:20px 2px 10px;
+    display:flex; justify-content:space-between; align-items:center;
   }
   .section-label:first-child{ margin-top:0; }
+  .section-label .link{
+    text-transform:none; letter-spacing:0; font-size:12.5px; color:var(--accent); cursor:pointer; font-weight:700;
+  }
 
   /* CHIP SELECTOR (body parts) */
   .chip-row{ display:flex; gap:8px; overflow-x:auto; padding:2px 2px 4px; scrollbar-width:none; }
@@ -130,11 +134,14 @@
     font-family:inherit;
     outline:none;
   }
+  input[type=date]{ color-scheme: dark; }
   input[type=text]:focus, input[type=number]:focus, input[type=date]:focus{
     border-color:var(--accent);
   }
   .row2{ display:flex; gap:10px; }
   .row2 .field{ flex:1; }
+  .row3{ display:flex; gap:10px; }
+  .row3 .field{ flex:1; }
   input[type=number]{ font-family:'JetBrains Mono', monospace; font-weight:700; }
 
   .btn{
@@ -150,7 +157,7 @@
   .btn-primary:active{ transform:scale(0.98); }
   .btn-ghost{ background:transparent; border:1px solid var(--steel); color:var(--text-dim); }
   .btn-plate{ background:var(--plate); color:#241C05; }
-  .btn-danger-text{ background:none; border:none; color:var(--text-faint); font-size:12px; cursor:pointer; padding:4px; }
+  .btn-danger{ background:transparent; border:1px solid var(--accent-dim); color:var(--accent); }
 
   /* Routine quick chips in log tab */
   .routine-pick-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
@@ -166,7 +173,6 @@
     border-radius:8px; padding:8px 12px; font-size:12.5px; color:var(--text-dim);
     cursor:pointer;
   }
-  .exercise-quick.selected{ border-style:solid; border-color:var(--accent); color:var(--text); background:var(--accent-dim); }
 
   /* Today groups */
   .exercise-group{
@@ -184,48 +190,46 @@
   .plate-badge{
     position:relative;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    width:64px; height:64px;
+    width:70px; height:70px;
     border-radius:50%;
     background:radial-gradient(circle at 35% 30%, #3a2a10, #1c1508 70%);
     border:3px solid var(--plate);
     box-shadow:inset 0 0 0 3px #15161A, 0 0 0 1px #000 inset;
-  }
-  .plate-badge .w{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; color:var(--plate); line-height:1; }
-  .plate-badge .r{ font-size:9px; color:var(--text-dim); margin-top:2px; }
-  .plate-badge .del{
-    position:absolute; top:-6px; right:-6px;
-    width:18px; height:18px; border-radius:50%;
-    background:var(--bg); border:1px solid var(--steel);
-    color:var(--text-faint); font-size:11px; line-height:16px; text-align:center;
     cursor:pointer;
   }
+  .plate-badge .w{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px; color:var(--plate); line-height:1; }
+  .plate-badge .r{ font-size:9px; color:var(--text-dim); margin-top:2px; }
+  .plate-badge .s{ font-size:8.5px; color:var(--text-faint); margin-top:1px; }
 
   /* History */
   .search-bar{ position:relative; margin-bottom:12px; }
   .search-bar input{ padding-left:38px; }
   .search-bar .icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:0.5; }
 
-  .bodypart-section{ margin-bottom:6px; }
-  .bodypart-header{
+  .date-section{ margin-bottom:6px; }
+  .date-header{
     display:flex; align-items:center; justify-content:space-between;
-    padding:12px 4px; cursor:pointer; user-select:none;
+    padding:14px 4px; cursor:pointer; user-select:none;
+    border-bottom:1px solid #24262C;
   }
-  .bodypart-header .left{ display:flex; align-items:center; gap:10px; }
-  .bodypart-header .name{ font-size:16px; font-weight:800; }
-  .bodypart-header .count{ font-size:12px; color:var(--text-faint); font-weight:600; }
-  .bodypart-header .chevron{ transition:transform .2s ease; color:var(--text-faint); }
-  .bodypart-header.open .chevron{ transform:rotate(90deg); }
-  .bodypart-body{ display:none; padding:0 2px 12px; }
-  .bodypart-body.open{ display:block; }
+  .date-header .left{ display:flex; flex-direction:column; }
+  .date-header .name{ font-size:16px; font-weight:800; }
+  .date-header .sub{ font-size:11.5px; color:var(--text-faint); margin-top:2px; }
+  .date-header .right{ display:flex; align-items:center; gap:10px; }
+  .date-header .count{ font-size:12px; color:var(--text-faint); font-weight:600; }
+  .date-header .chevron{ transition:transform .2s ease; color:var(--text-faint); }
+  .date-header.open .chevron{ transform:rotate(90deg); }
+  .date-body{ display:none; padding:10px 2px 16px; }
+  .date-body.open{ display:block; }
 
   .history-entry{
     display:flex; justify-content:space-between; align-items:center;
     background:var(--bg-card); border:1px solid #2C2E35; border-radius:12px;
-    padding:12px 14px; margin-bottom:8px;
+    padding:12px 14px; margin-bottom:8px; cursor:pointer;
   }
-  .history-entry .info .ex-name{ font-weight:700; font-size:14.5px; }
-  .history-entry .info .ex-date{ font-size:11.5px; color:var(--text-faint); margin-top:2px; }
-  .history-entry .sets-mini{ font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--plate); text-align:right; max-width:150px; }
+  .history-entry .info .ex-name{ font-weight:700; font-size:14.5px; display:flex; align-items:center; }
+  .history-entry .info .ex-detail{ font-size:12px; color:var(--text-faint); margin-top:3px; }
+  .history-entry .stat{ font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--plate); text-align:right; font-weight:700; }
 
   .empty-state{
     text-align:center; padding:50px 20px; color:var(--text-faint);
@@ -274,8 +278,6 @@
   nav.bottom button.active{ color:var(--accent); }
   nav.bottom button .lbl{ font-size:11px; font-weight:700; }
 
-  .fab-hint{ font-size:12px; color:var(--text-faint); text-align:center; margin-top:6px; }
-
   /* Toast */
   #toast{
     position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px);
@@ -292,12 +294,69 @@
 <div id="app">
 
   <header>
-    <div class="brand">IRON<span class="dot">·</span>LOG</div>
+    <div class="date-row" style="margin-top:0; margin-bottom:8px;">
+      <div class="brand">IRON<span class="dot">·</span>LOG</div>
+      <div id="syncBtn" style="font-size:11px; font-weight:700; color:var(--text-faint); border:1px solid var(--steel); padding:6px 10px; border-radius:999px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+        🔗 <span id="syncBtnLabel">동기화</span>
+      </div>
+    </div>
     <div class="date-row">
       <div class="today-date" id="headerDate"></div>
       <div class="streak" id="headerStreak"></div>
     </div>
   </header>
+
+  <!-- ===================== SYNC GATE (first run / device linking) ===================== -->
+  <div id="syncGate" style="display:none; position:fixed; inset:0; z-index:100; background:var(--bg); padding:28px 22px; overflow-y:auto;">
+    <div style="max-width:440px; margin:20px auto 0;">
+      <div class="brand" style="font-size:30px; margin-bottom:6px;">IRON<span class="dot">·</span>LOG</div>
+      <p style="color:var(--text-dim); font-size:14px; line-height:1.6; margin:0 0 24px;">
+        기록은 <b style="color:var(--text);">동기화 코드</b>로 클라우드에 저장돼요.<br>
+        같은 코드를 입력하면 다른 기기에서도 똑같은 기록을 볼 수 있어요.
+      </p>
+
+      <div class="card" style="margin-bottom:14px;">
+        <div class="field" style="margin-bottom:10px;">
+          <label>새로 시작하기</label>
+        </div>
+        <button class="btn btn-primary" id="genCodeBtn">새 동기화 코드 만들기</button>
+      </div>
+
+      <div class="section-label" style="margin:18px 2px 8px;">이미 코드가 있다면</div>
+      <div class="card">
+        <div class="field">
+          <label>동기화 코드 입력</label>
+          <input type="text" id="joinCodeInput" placeholder="예: AB12CD34" style="text-transform:uppercase;">
+        </div>
+        <button class="btn btn-ghost" style="width:100%;" id="joinCodeBtn">이 코드로 접속하기</button>
+      </div>
+      <div id="syncGateMsg" style="color:var(--accent); font-size:13px; margin-top:14px; text-align:center;"></div>
+    </div>
+  </div>
+
+  <!-- ===================== SYNC INFO (view current code / switch device) ===================== -->
+  <div id="syncPanel" style="display:none; position:fixed; inset:0; z-index:100; background:var(--bg); padding:28px 22px; overflow-y:auto;">
+    <div style="max-width:440px; margin:20px auto 0;">
+      <div class="section-label" style="margin-top:0;">내 동기화 코드</div>
+      <div class="card" style="text-align:center;">
+        <div class="num" id="currentCodeDisplay" style="font-size:28px; font-weight:700; color:var(--plate); letter-spacing:3px; margin-bottom:14px;"></div>
+        <button class="btn btn-plate" style="width:100%;" id="copyCodeBtn">코드 복사하기</button>
+      </div>
+      <p style="color:var(--text-faint); font-size:12.5px; line-height:1.6; margin:14px 2px;">
+        다른 기기(폰, PC 등)에서 이 코드를 입력하면 지금 보이는 기록과 루틴이 그대로 동기화돼요. 코드를 아는 사람은 누구나 데이터를 볼 수 있으니 노출되지 않게 주의하세요.
+      </p>
+
+      <div class="section-label">다른 코드로 전환</div>
+      <div class="card">
+        <div class="field">
+          <label>동기화 코드 입력</label>
+          <input type="text" id="switchCodeInput" placeholder="예: AB12CD34" style="text-transform:uppercase;">
+        </div>
+        <button class="btn btn-ghost" style="width:100%;" id="switchCodeBtn">이 코드로 전환하기</button>
+      </div>
+      <button class="btn btn-ghost" style="width:100%; margin-top:16px;" id="closeSyncPanelBtn">닫기</button>
+    </div>
+  </div>
 
   <main>
     <!-- ===================== LOG VIEW ===================== -->
@@ -310,6 +369,10 @@
       <div class="section-label">세트 기록하기</div>
       <div class="card">
         <div class="field">
+          <label>날짜</label>
+          <input type="date" id="dateInput">
+        </div>
+        <div class="field">
           <label>부위</label>
           <div class="chip-row" id="logBodyPartChips"></div>
         </div>
@@ -318,7 +381,7 @@
           <input type="text" id="exerciseInput" placeholder="예: 벤치프레스" list="exerciseSuggestions">
           <datalist id="exerciseSuggestions"></datalist>
         </div>
-        <div class="row2">
+        <div class="row3">
           <div class="field">
             <label>무게 (kg)</label>
             <input type="number" id="weightInput" placeholder="60" inputmode="decimal">
@@ -327,11 +390,15 @@
             <label>횟수</label>
             <input type="number" id="repsInput" placeholder="10" inputmode="numeric">
           </div>
+          <div class="field">
+            <label>세트수</label>
+            <input type="number" id="setsInput" placeholder="3" inputmode="numeric" value="1">
+          </div>
         </div>
-        <button class="btn btn-primary" id="addSetBtn">+ 세트 추가</button>
+        <button class="btn btn-primary" id="addSetBtn">+ 기록 추가</button>
       </div>
 
-      <div class="section-label">오늘 기록 (<span id="todayCount">0</span>세트)</div>
+      <div class="section-label"><span id="logListTitle">오늘 기록</span> (<span id="todayCount">0</span>)</div>
       <div id="todayList"></div>
     </section>
 
@@ -351,7 +418,7 @@
       <div id="routineList"></div>
     </section>
 
-    <!-- ===================== ROUTINE BUILDER (overlay-ish view) ===================== -->
+    <!-- ===================== ROUTINE BUILDER ===================== -->
     <section class="view" id="view-builder">
       <div class="section-label">루틴 이름</div>
       <div class="card" style="margin-bottom:16px;">
@@ -362,6 +429,42 @@
       <button class="btn btn-ghost" style="width:100%; margin:10px 0 20px;" id="builderAddRowBtn">+ 운동 추가</button>
       <button class="btn btn-primary" id="builderSaveBtn">루틴 저장</button>
       <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="builderCancelBtn">취소</button>
+    </section>
+
+    <!-- ===================== ENTRY EDIT VIEW ===================== -->
+    <section class="view" id="view-edit">
+      <div class="section-label">기록 수정</div>
+      <div class="card">
+        <div class="field">
+          <label>날짜</label>
+          <input type="date" id="editDateInput">
+        </div>
+        <div class="field">
+          <label>부위</label>
+          <div class="chip-row" id="editBodyPartChips"></div>
+        </div>
+        <div class="field">
+          <label>운동명</label>
+          <input type="text" id="editExerciseInput" placeholder="운동명">
+        </div>
+        <div class="row3">
+          <div class="field">
+            <label>무게 (kg)</label>
+            <input type="number" id="editWeightInput">
+          </div>
+          <div class="field">
+            <label>횟수</label>
+            <input type="number" id="editRepsInput">
+          </div>
+          <div class="field">
+            <label>세트수</label>
+            <input type="number" id="editSetsInput">
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="editSaveBtn">저장</button>
+      <button class="btn btn-danger" style="width:100%; margin-top:10px;" id="editDeleteBtn">이 기록 삭제</button>
+      <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="editCancelBtn">취소</button>
     </section>
   </main>
 
@@ -380,20 +483,46 @@
   <div id="toast"></div>
 </div>
 
-<script>
+<script type="module">
+/* =====================================================================
+   Firebase 설정
+   1) https://console.firebase.google.com 에서 프로젝트를 만드세요.
+   2) Build > Firestore Database > 데이터베이스 만들기 (테스트 모드로 시작)
+   3) 프로젝트 설정(톱니바퀴) > 일반 > 내 앱 > 웹 앱 추가(</>) 후
+      아래 나오는 firebaseConfig 값을 그대로 복사해서 아래에 붙여넣으세요.
+   ===================================================================== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBjxYCuM3_78kKw5lgMYOfF6cpsjztCeu8",
+  authDomain: "iron-log-6ae17.firebaseapp.com",
+  projectId: "iron-log-6ae17",
+  storageBucket: "iron-log-6ae17.firebasestorage.app",
+  messagingSenderId: "2007999910",
+  appId: "1:2007999910:web:e4e80a4c43eeccdd611b67",
+  measurementId: "G-CQ8CM4NYQS"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
 const BODY_PARTS = ["가슴","등","어깨","팔","다리","복근","유산소","기타"];
 
-let logs = [];       // {id, date:'YYYY-MM-DD', bodyPart, exercise, weight, reps}
+let logs = [];       // {id, date:'YYYY-MM-DD', bodyPart, exercise, weight, reps, sets}
 let routines = [];   // {id, name, exercises:[{bodyPart, exercise}]}
 
 let state = {
   currentView: 'log',
+  selectedDate: todayStr(),
   logBodyPart: BODY_PARTS[0],
   activeRoutineId: null,
   historyBodyPartFilter: 'all',
   searchQuery: '',
   editingRoutineId: null,
-  builderExercises: []
+  builderExercises: [],
+  editingEntryId: null,
+  editBodyPart: BODY_PARTS[0]
 };
 
 function todayStr(){
@@ -402,7 +531,9 @@ function todayStr(){
 }
 function fmtDateKo(dstr){
   const [y,m,d] = dstr.split('-');
-  return `${parseInt(m)}월 ${parseInt(d)}일`;
+  const days = ['일','월','화','수','목','금','토'];
+  const dateObj = new Date(Number(y), Number(m)-1, Number(d));
+  return `${parseInt(m)}월 ${parseInt(d)}일 (${days[dateObj.getDay()]})`;
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function showToast(msg){
@@ -413,25 +544,99 @@ function showToast(msg){
   showToast._tm = setTimeout(()=>t.classList.remove('show'), 1600);
 }
 
-/* ---------------- STORAGE ---------------- */
+/* ---------------- SYNC CODE + STORAGE (Firestore) ---------------- */
+let syncCode = localStorage.getItem('ironlog_sync_code') || '';
+
+function genCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 헷갈리는 문자 제외
+  let s = '';
+  for(let i=0;i<8;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+function dataRef(code){ return doc(db, 'workoutApps', code); }
+
 async function loadData(){
   try{
-    const r = await window.storage.get('logs');
-    logs = r ? JSON.parse(r.value) : [];
-  }catch(e){ logs = []; }
+    const snap = await getDoc(dataRef(syncCode));
+    if(snap.exists()){
+      const d = snap.data();
+      logs = d.logs || [];
+      routines = d.routines || [];
+    } else {
+      logs = []; routines = [];
+      await setDoc(dataRef(syncCode), { logs: [], routines: [], updatedAt: Date.now() });
+    }
+    logs.forEach(l=>{ if(l.sets===undefined) l.sets = 1; });
+  }catch(e){
+    console.error(e);
+    showToast('불러오기 실패 - 인터넷 연결 또는 Firebase 설정을 확인하세요');
+    logs = []; routines = [];
+  }
+}
+async function saveData(){
   try{
-    const r = await window.storage.get('routines');
-    routines = r ? JSON.parse(r.value) : [];
-  }catch(e){ routines = []; }
+    await setDoc(dataRef(syncCode), { logs, routines, updatedAt: Date.now() }, { merge: true });
+  }catch(e){
+    console.error(e);
+    showToast('저장 실패 - 인터넷 연결을 확인해주세요');
+  }
 }
-async function saveLogs(){
-  try{ await window.storage.set('logs', JSON.stringify(logs)); }
-  catch(e){ showToast('저장 실패, 다시 시도해주세요'); }
+// 이전 코드와의 호환을 위해 saveLogs/saveRoutines 이름을 그대로 유지
+async function saveLogs(){ await saveData(); }
+async function saveRoutines(){ await saveData(); }
+
+/* ---------------- SYNC UI ---------------- */
+function showSyncGate(msg){
+  document.getElementById('syncGate').style.display = 'block';
+  document.getElementById('syncGateMsg').textContent = msg || '';
 }
-async function saveRoutines(){
-  try{ await window.storage.set('routines', JSON.stringify(routines)); }
-  catch(e){ showToast('저장 실패, 다시 시도해주세요'); }
+function hideSyncGate(){
+  document.getElementById('syncGate').style.display = 'none';
 }
+function updateSyncBtnLabel(){
+  document.getElementById('syncBtnLabel').textContent = syncCode ? syncCode.slice(-4) : '동기화';
+}
+
+document.getElementById('genCodeBtn').addEventListener('click', async ()=>{
+  syncCode = genCode();
+  localStorage.setItem('ironlog_sync_code', syncCode);
+  hideSyncGate();
+  await startApp();
+  showToast('새 코드가 만들어졌어요: ' + syncCode);
+});
+
+document.getElementById('joinCodeBtn').addEventListener('click', async ()=>{
+  const v = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if(!v){ showSyncGate('코드를 입력해주세요'); return; }
+  syncCode = v;
+  localStorage.setItem('ironlog_sync_code', syncCode);
+  hideSyncGate();
+  await startApp();
+});
+
+document.getElementById('syncBtn').addEventListener('click', ()=>{
+  document.getElementById('currentCodeDisplay').textContent = syncCode;
+  document.getElementById('syncPanel').style.display = 'block';
+});
+document.getElementById('closeSyncPanelBtn').addEventListener('click', ()=>{
+  document.getElementById('syncPanel').style.display = 'none';
+});
+document.getElementById('copyCodeBtn').addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(syncCode);
+    showToast('코드가 복사됐어요');
+  }catch(e){ showToast('복사에 실패했어요. 직접 선택해서 복사해주세요'); }
+});
+document.getElementById('switchCodeBtn').addEventListener('click', async ()=>{
+  const v = document.getElementById('switchCodeInput').value.trim().toUpperCase();
+  if(!v){ showToast('코드를 입력해주세요'); return; }
+  syncCode = v;
+  localStorage.setItem('ironlog_sync_code', syncCode);
+  document.getElementById('syncPanel').style.display = 'none';
+  document.getElementById('switchCodeInput').value = '';
+  showToast('코드를 전환하는 중...');
+  await startApp();
+});
 
 /* ---------------- HEADER ---------------- */
 function renderHeader(){
@@ -440,12 +645,10 @@ function renderHeader(){
   document.getElementById('headerDate').textContent =
     `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
 
-  // streak: consecutive days (including today if logged) with at least one log
   const dateSet = new Set(logs.map(l=>l.date));
   let streak = 0;
   let cur = new Date();
   if(!dateSet.has(todayStr())){
-    // check yesterday onward; if today not logged yet, streak counts up to yesterday
     cur.setDate(cur.getDate()-1);
   }
   while(true){
@@ -534,24 +737,27 @@ function renderExerciseSuggestions(){
 }
 
 function renderTodayList(){
-  const today = todayStr();
-  const todays = logs.filter(l=>l.date===today);
-  document.getElementById('todayCount').textContent = todays.length;
+  const sel = state.selectedDate;
+  const isToday = sel === todayStr();
+  document.getElementById('logListTitle').textContent = isToday ? '오늘 기록' : `${fmtDateKo(sel)} 기록`;
+
+  const dayLogs = logs.filter(l=>l.date===sel);
+  document.getElementById('todayCount').textContent = dayLogs.length;
   const wrap = document.getElementById('todayList');
   wrap.innerHTML = '';
-  if(todays.length===0){
-    wrap.innerHTML = `<div class="empty-state"><div class="big">🏋️</div><div class="msg">아직 오늘 기록이 없어요.<br>위에서 첫 세트를 추가해보세요.</div></div>`;
+  if(dayLogs.length===0){
+    wrap.innerHTML = `<div class="empty-state"><div class="big">🏋️</div><div class="msg">${isToday? '아직 오늘 기록이 없어요.' : '이 날짜의 기록이 없어요.'}<br>위에서 기록을 추가해보세요.</div></div>`;
     return;
   }
   // group by exercise, preserve order of first appearance
   const groups = [];
   const map = {};
-  todays.forEach(l=>{
+  dayLogs.forEach(l=>{
     if(!map[l.exercise]){
-      map[l.exercise] = { exercise:l.exercise, bodyPart:l.bodyPart, sets:[] };
+      map[l.exercise] = { exercise:l.exercise, bodyPart:l.bodyPart, entries:[] };
       groups.push(map[l.exercise]);
     }
-    map[l.exercise].sets.push(l);
+    map[l.exercise].entries.push(l);
   });
   groups.forEach(g=>{
     const gDiv = document.createElement('div');
@@ -561,51 +767,126 @@ function renderTodayList(){
         <div class="exercise-group-title">${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span></div>
       </div>
       <div class="sets-row">
-        ${g.sets.map(s=>`
+        ${g.entries.map(s=>`
           <div class="plate-badge" data-id="${s.id}">
-            <div class="del" data-del="${s.id}">✕</div>
             <div class="w">${s.weight}</div>
-            <div class="r">x${s.reps}</div>
+            <div class="r">×${s.reps}</div>
+            <div class="s">${s.sets}세트</div>
           </div>
         `).join('')}
       </div>
     `;
     wrap.appendChild(gDiv);
   });
-  wrap.querySelectorAll('[data-del]').forEach(el=>{
-    el.addEventListener('click', async ()=>{
-      const id = el.dataset.del;
-      logs = logs.filter(l=>l.id!==id);
-      await saveLogs();
-      renderAll();
-      showToast('세트를 삭제했어요');
-    });
+  wrap.querySelectorAll('.plate-badge').forEach(el=>{
+    el.addEventListener('click', ()=> openEdit(el.dataset.id));
   });
 }
+
+document.getElementById('dateInput').addEventListener('change', (e)=>{
+  state.selectedDate = e.target.value || todayStr();
+  renderTodayList();
+});
 
 document.getElementById('addSetBtn').addEventListener('click', async ()=>{
   const exercise = document.getElementById('exerciseInput').value.trim();
   const weight = document.getElementById('weightInput').value;
   const reps = document.getElementById('repsInput').value;
+  const sets = document.getElementById('setsInput').value || '1';
   if(!exercise){ showToast('운동명을 입력해주세요'); return; }
   if(weight==='' || reps===''){ showToast('무게와 횟수를 입력해주세요'); return; }
   logs.push({
     id: uid(),
-    date: todayStr(),
+    date: state.selectedDate,
     bodyPart: state.logBodyPart,
     exercise,
     weight: Number(weight),
-    reps: Number(reps)
+    reps: Number(reps),
+    sets: Number(sets) || 1
   });
   await saveLogs();
   document.getElementById('weightInput').value = '';
   document.getElementById('repsInput').value = '';
+  document.getElementById('setsInput').value = '1';
   document.getElementById('weightInput').focus();
   renderAll();
-  showToast('세트가 추가됐어요 💪');
+  showToast('기록이 추가됐어요 💪');
 });
 
-/* ---------------- HISTORY VIEW ---------------- */
+/* ---------------- EDIT ENTRY VIEW ---------------- */
+function renderEditBodyPartChips(){
+  const wrap = document.getElementById('editBodyPartChips');
+  wrap.innerHTML = '';
+  BODY_PARTS.forEach(bp=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (state.editBodyPart===bp ? ' active':'');
+    chip.textContent = bp;
+    chip.addEventListener('click', ()=>{
+      state.editBodyPart = bp;
+      renderEditBodyPartChips();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+function openEdit(entryId){
+  const entry = logs.find(l=>l.id===entryId);
+  if(!entry) return;
+  state.editingEntryId = entryId;
+  state.editBodyPart = entry.bodyPart;
+  document.getElementById('editDateInput').value = entry.date;
+  document.getElementById('editExerciseInput').value = entry.exercise;
+  document.getElementById('editWeightInput').value = entry.weight;
+  document.getElementById('editRepsInput').value = entry.reps;
+  document.getElementById('editSetsInput').value = entry.sets;
+  renderEditBodyPartChips();
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-edit').classList.add('active');
+}
+
+document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
+  const entry = logs.find(l=>l.id===state.editingEntryId);
+  if(!entry) return;
+  const exercise = document.getElementById('editExerciseInput').value.trim();
+  const date = document.getElementById('editDateInput').value;
+  const weight = document.getElementById('editWeightInput').value;
+  const reps = document.getElementById('editRepsInput').value;
+  const sets = document.getElementById('editSetsInput').value;
+  if(!exercise){ showToast('운동명을 입력해주세요'); return; }
+  if(!date){ showToast('날짜를 선택해주세요'); return; }
+  if(weight==='' || reps===''){ showToast('무게와 횟수를 입력해주세요'); return; }
+  entry.exercise = exercise;
+  entry.date = date;
+  entry.bodyPart = state.editBodyPart;
+  entry.weight = Number(weight);
+  entry.reps = Number(reps);
+  entry.sets = Number(sets) || 1;
+  await saveLogs();
+  showToast('수정됐어요');
+  backFromEdit();
+});
+
+document.getElementById('editDeleteBtn').addEventListener('click', async ()=>{
+  logs = logs.filter(l=>l.id!==state.editingEntryId);
+  await saveLogs();
+  showToast('기록을 삭제했어요');
+  backFromEdit();
+});
+
+document.getElementById('editCancelBtn').addEventListener('click', backFromEdit);
+
+function backFromEdit(){
+  state.editingEntryId = null;
+  renderAll();
+  switchView(state.currentView==='edit' ? 'log' : state.currentView);
+  // ensure returns to whichever list made sense — default to history if that's where we came from
+  const prev = document.querySelector('.view.active');
+  if(!prev || prev.id==='view-edit'){
+    switchView('log');
+  }
+}
+
+/* ---------------- HISTORY VIEW (grouped by date) ---------------- */
 function renderHistoryFilterChips(){
   const wrap = document.getElementById('historyBodyPartFilter');
   wrap.innerHTML = '';
@@ -623,7 +904,8 @@ function renderHistoryFilterChips(){
   });
 }
 
-let openBodyParts = new Set(BODY_PARTS); // default expanded
+let openDates = new Set(); // dates currently expanded; most recent auto-opened on first render
+let historyInitialized = false;
 
 function renderHistory(){
   renderHistoryFilterChips();
@@ -642,59 +924,56 @@ function renderHistory(){
     return;
   }
 
-  // group by bodyPart -> exercise -> sets, sorted by date desc
-  const byBodyPart = {};
+  const byDate = {};
   filtered.forEach(l=>{
-    if(!byBodyPart[l.bodyPart]) byBodyPart[l.bodyPart] = [];
-    byBodyPart[l.bodyPart].push(l);
+    if(!byDate[l.date]) byDate[l.date] = [];
+    byDate[l.date].push(l);
   });
+  const dates = Object.keys(byDate).sort((a,b)=> b.localeCompare(a));
 
-  const orderedParts = BODY_PARTS.filter(bp=>byBodyPart[bp]);
+  if(!historyInitialized && dates.length>0){
+    openDates.add(dates[0]);
+    historyInitialized = true;
+  }
 
-  orderedParts.forEach(bp=>{
-    const entries = byBodyPart[bp];
-    const isOpen = openBodyParts.has(bp);
+  dates.forEach(date=>{
+    const entries = byDate[date];
+    const isOpen = openDates.has(date);
+    const totalSets = entries.reduce((sum,e)=>sum+e.sets,0);
+    const exerciseCount = new Set(entries.map(e=>e.exercise)).size;
 
     const section = document.createElement('div');
-    section.className = 'bodypart-section';
+    section.className = 'date-section';
 
     const header = document.createElement('div');
-    header.className = 'bodypart-header' + (isOpen?' open':'');
+    header.className = 'date-header' + (isOpen?' open':'');
     header.innerHTML = `
-      <div class="left"><span class="name">${bp}</span><span class="count">${entries.length}세트</span></div>
-      <span class="chevron">›</span>
+      <div class="left">
+        <span class="name">${fmtDateKo(date)}</span>
+        <span class="sub">운동 ${exerciseCount}개 · ${totalSets}세트</span>
+      </div>
+      <div class="right"><span class="chevron">›</span></div>
     `;
     header.addEventListener('click', ()=>{
-      if(openBodyParts.has(bp)) openBodyParts.delete(bp); else openBodyParts.add(bp);
+      if(openDates.has(date)) openDates.delete(date); else openDates.add(date);
       renderHistory();
     });
     section.appendChild(header);
 
     const body = document.createElement('div');
-    body.className = 'bodypart-body' + (isOpen?' open':'');
+    body.className = 'date-body' + (isOpen?' open':'');
 
-    // group entries by date+exercise
-    const byDateExercise = {};
-    const order = [];
     entries.forEach(l=>{
-      const key = l.date+'|'+l.exercise;
-      if(!byDateExercise[key]){ byDateExercise[key] = { date:l.date, exercise:l.exercise, sets:[] }; order.push(key); }
-      byDateExercise[key].sets.push(l);
-    });
-    order.sort((a,b)=> byDateExercise[b].date.localeCompare(byDateExercise[a].date));
-
-    order.forEach(key=>{
-      const g = byDateExercise[key];
-      const setsStr = g.sets.map(s=>`${s.weight}×${s.reps}`).join('  ');
       const row = document.createElement('div');
       row.className = 'history-entry';
       row.innerHTML = `
         <div class="info">
-          <div class="ex-name">${escapeHtml(g.exercise)}</div>
-          <div class="ex-date">${fmtDateKo(g.date)}</div>
+          <div class="ex-name">${escapeHtml(l.exercise)}<span class="bodypart-tag">${l.bodyPart}</span></div>
+          <div class="ex-detail">${l.sets}세트 · ${l.reps}회</div>
         </div>
-        <div class="sets-mini">${setsStr}</div>
+        <div class="stat">${l.weight}kg</div>
       `;
+      row.addEventListener('click', ()=> openEdit(l.id));
       body.appendChild(row);
     });
 
@@ -831,9 +1110,19 @@ function renderAll(){
 }
 
 /* ---------------- INIT ---------------- */
-(async function init(){
+async function startApp(){
+  updateSyncBtnLabel();
+  document.getElementById('dateInput').value = state.selectedDate;
   await loadData();
   renderAll();
+}
+
+(function init(){
+  if(!syncCode){
+    showSyncGate();
+  } else {
+    startApp();
+  }
 })();
 </script>
 </body>
