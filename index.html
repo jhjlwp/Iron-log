@@ -3,24 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#F4EEE0">
 <title>IRON LOG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg: #15161A;
-    --bg-elevated: #1D1F24;
-    --bg-card: #24262C;
-    --steel: #3A3D44;
-    --steel-light: #4E525C;
-    --accent: #FF4B3E;      /* iron red */
-    --accent-dim: #7A2B26;
-    --plate: #FFC857;       /* plate amber */
-    --plate-dim: #6B5527;
-    --text: #F3F2EE;
-    --text-dim: #9A9CA5;
-    --text-faint: #5C5F68;
-    --success: #4CB782;
+    --bg: #F4EEE0;
+    --bg-elevated: #FFFFFF;
+    --bg-card: #FFFDF8;
+    --steel: #211D16;       /* crisp near-black line, for pill/card/button outlines */
+    --steel-light: #A79C82; /* muted warm gray, for dashed/subtle lines */
+    --hairline: #E4DAC5;    /* soft warm divider for full-width structural lines */
+    --accent: #E7B84A;      /* mustard */
+    --accent-dim: #F5E2AE;
+    --plate: #A6790E;       /* dark goldenrod, for text emphasis */
+    --plate-dim: #D9BB6A;
+    --text: #221E17;
+    --text-dim: #6B6455;
+    --text-faint: #A69C87;
+    --success: #4B8F5E;
     --radius: 14px;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -40,9 +42,7 @@
     flex-direction:column;
     position:relative;
     overflow-x:hidden;
-    background:
-      radial-gradient(ellipse 600px 300px at 50% -10%, rgba(255,75,62,0.10), transparent 60%),
-      var(--bg);
+    background: var(--bg);
   }
   .num{ font-family:'JetBrains Mono', monospace; }
 
@@ -50,9 +50,9 @@
   header{
     padding:22px 20px 14px;
     position:sticky; top:0; z-index:10;
-    background:rgba(21,22,26,0.92);
+    background:rgba(244,238,224,0.92);
     backdrop-filter:blur(10px);
-    border-bottom:1px solid #26282E;
+    border-bottom:1px solid var(--hairline);
   }
   header .brand{
     font-family:'Bebas Neue', sans-serif;
@@ -121,7 +121,7 @@
   /* CARD / FORM */
   .card{
     background:var(--bg-card);
-    border:1px solid #2C2E35;
+    border:1px solid var(--hairline);
     border-radius:var(--radius);
     padding:16px;
     margin-bottom:14px;
@@ -142,7 +142,7 @@
     font-family:inherit;
     outline:none;
   }
-  input[type=date]{ color-scheme: dark; display:block; width:100%; max-width:100%; box-sizing:border-box; -webkit-appearance:none; appearance:none; }
+  input[type=date]{ color-scheme: light; display:block; width:100%; max-width:100%; box-sizing:border-box; -webkit-appearance:none; appearance:none; }
   input[type=text]:focus, input[type=number]:focus, input[type=date]:focus{
     border-color:var(--accent);
   }
@@ -184,7 +184,7 @@
 
   /* Today groups */
   .exercise-group{
-    background:var(--bg-card); border:1px solid #2C2E35; border-radius:var(--radius);
+    background:var(--bg-card); border:1px solid var(--hairline); border-radius:var(--radius);
     padding:14px; margin-bottom:10px;
   }
   .exercise-group-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
@@ -200,9 +200,9 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     width:70px; height:70px;
     border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #3a2a10, #1c1508 70%);
+    background:radial-gradient(circle at 35% 30%, #FFFDF6, #F1E6C9 70%);
     border:3px solid var(--plate);
-    box-shadow:inset 0 0 0 3px #15161A, 0 0 0 1px #000 inset;
+    box-shadow:inset 0 0 0 3px var(--bg), 0 0 0 1px var(--steel) inset;
     cursor:pointer;
   }
   .plate-badge .w{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px; color:var(--plate); line-height:1; }
@@ -212,14 +212,14 @@
   .entries-col{ display:flex; flex-direction:column; }
   .entry-row{
     display:flex; align-items:center; gap:12px;
-    padding:9px 2px; border-bottom:1px solid #2A2C33; cursor:pointer;
+    padding:9px 2px; border-bottom:1px solid var(--hairline); cursor:pointer;
   }
   .entry-row:last-child{ border-bottom:none; }
   .mini-plate{
     flex:0 0 auto; width:54px; height:54px; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #3a2a10, #1c1508 70%);
+    background:radial-gradient(circle at 35% 30%, #FFFDF6, #F1E6C9 70%);
     border:3px solid var(--plate);
-    box-shadow:inset 0 0 0 3px #15161A, 0 0 0 1px #000 inset;
+    box-shadow:inset 0 0 0 3px var(--bg), 0 0 0 1px var(--steel) inset;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
   }
   .mini-plate.empty{ border-color:var(--steel-light); }
@@ -232,7 +232,7 @@
   .mini-plate-pair{ display:flex; align-items:center; gap:4px; flex:0 0 auto; }
   .ss-plus{ color:var(--text-faint); font-size:13px; font-weight:700; }
   .ss-tag{
-    font-size:10px; font-weight:800; color:var(--bg); background:var(--plate);
+    font-size:10px; font-weight:800; color:#FFFBF0; background:var(--plate);
     padding:2px 7px; border-radius:6px; margin-left:6px; vertical-align:middle;
     text-transform:uppercase; letter-spacing:0.5px;
   }
@@ -276,14 +276,14 @@
   .history-date-block{ margin-bottom:22px; }
   .history-date-block-title{
     font-size:13px; font-weight:800; color:var(--text-dim);
-    margin:4px 2px 10px; padding-bottom:8px; border-bottom:1px solid #24262C;
+    margin:4px 2px 10px; padding-bottom:8px; border-bottom:1px solid var(--hairline);
   }
 
   .date-section{ margin-bottom:6px; }
   .date-header{
     display:flex; align-items:center; justify-content:space-between;
     padding:14px 4px; cursor:pointer; user-select:none;
-    border-bottom:1px solid #24262C;
+    border-bottom:1px solid var(--hairline);
   }
   .date-header .left{ display:flex; flex-direction:column; }
   .date-header .name{ font-size:16px; font-weight:800; }
@@ -297,7 +297,7 @@
 
   .history-entry{
     display:flex; justify-content:space-between; align-items:center;
-    background:var(--bg-card); border:1px solid #2C2E35; border-radius:12px;
+    background:var(--bg-card); border:1px solid var(--hairline); border-radius:12px;
     padding:12px 14px; margin-bottom:8px; cursor:pointer;
   }
   .history-entry.history-entry-ss{ align-items:flex-start; }
@@ -320,7 +320,7 @@
 
   /* Routines */
   .routine-card{
-    background:var(--bg-card); border:1px solid #2C2E35; border-radius:var(--radius);
+    background:var(--bg-card); border:1px solid var(--hairline); border-radius:var(--radius);
     padding:16px; margin-bottom:12px;
   }
   .routine-card-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
@@ -345,8 +345,8 @@
   nav.bottom{
     position:fixed; bottom:0; left:50%; transform:translateX(-50%);
     width:100%; max-width:480px;
-    background:rgba(21,22,26,0.96); backdrop-filter:blur(12px);
-    border-top:1px solid #26282E;
+    background:rgba(244,238,224,0.96); backdrop-filter:blur(12px);
+    border-top:1px solid var(--hairline);
     display:flex;
     padding-bottom:var(--safe-bottom);
     z-index:20;
@@ -362,7 +362,7 @@
   /* Toast */
   #toast{
     position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px);
-    background:var(--text); color:#15161A; font-weight:700; font-size:13px;
+    background:var(--text); color:var(--bg); font-weight:700; font-size:13px;
     padding:10px 18px; border-radius:999px; opacity:0; transition:all .25s ease;
     pointer-events:none; z-index:50; white-space:nowrap;
   }
@@ -559,9 +559,18 @@
       <div class="card" style="margin-bottom:16px;">
         <input type="text" id="builderNameInput" placeholder="예: 가슴/삼두 루틴">
       </div>
+
+      <div class="section-label">기존 운동에서 찾아 추가</div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="field" style="margin-bottom:10px;">
+          <input type="text" id="builderSearchInput" placeholder="예: 벤치프레스">
+        </div>
+        <div id="builderSearchResults" class="exercise-quick-list"></div>
+      </div>
+
       <div class="section-label">운동 목록</div>
       <div id="builderExRows"></div>
-      <button class="btn btn-ghost" style="width:100%; margin:10px 0 20px;" id="builderAddRowBtn">+ 운동 추가</button>
+      <button class="btn btn-ghost" style="width:100%; margin:10px 0 20px;" id="builderAddRowBtn">+ 새 운동 직접 추가</button>
       <button class="btn btn-primary" id="builderSaveBtn">루틴 저장</button>
       <button class="btn btn-ghost" style="width:100%; margin-top:10px;" id="builderCancelBtn">취소</button>
     </section>
@@ -1431,9 +1440,62 @@ function openBuilder(routineId){
   document.getElementById('builderNameInput').value = existing ? existing.name : '';
   state.builderExercises = existing ? JSON.parse(JSON.stringify(existing.exercises)) : [{bodyPart:BODY_PARTS[0], exercise:''}];
   renderBuilderRows();
+  document.getElementById('builderSearchInput').value = '';
+  renderBuilderSearchResults();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-builder').classList.add('active');
 }
+
+function getKnownExercises(){
+  const map = {};
+  logs.forEach(l=>{
+    if(l.exercise) map[l.exercise] = l.bodyPart;
+    if(l.superset && l.superset.exercise) map[l.superset.exercise] = l.superset.bodyPart;
+  });
+  return Object.entries(map)
+    .map(([exercise, bodyPart])=>({ exercise, bodyPart }))
+    .sort((a,b)=> a.exercise.localeCompare(b.exercise, 'ko'));
+}
+
+function renderBuilderSearchResults(){
+  const q = document.getElementById('builderSearchInput').value.trim().toLowerCase();
+  const known = getKnownExercises();
+  const filtered = q ? known.filter(k=> k.exercise.toLowerCase().includes(q)) : known.slice(0, 12);
+  const wrap = document.getElementById('builderSearchResults');
+
+  if(known.length===0){
+    wrap.innerHTML = `<div style="font-size:12.5px; color:var(--text-faint); padding:6px 2px;">아직 기록된 운동이 없어요. 기록 탭에서 운동을 추가한 뒤 다시 시도해보세요.</div>`;
+    return;
+  }
+  if(filtered.length===0){
+    wrap.innerHTML = `<div style="font-size:12.5px; color:var(--text-faint); padding:6px 2px;">일치하는 과거 기록이 없어요.</div>`;
+    return;
+  }
+  wrap.innerHTML = filtered.map(k=>`
+    <div class="exercise-quick builder-search-item" data-exercise="${escapeHtml(k.exercise)}" data-bodypart="${k.bodyPart}">
+      ${escapeHtml(k.exercise)}<span class="bodypart-tag" style="margin-left:5px;">${k.bodyPart}</span>
+      <span style="color:var(--accent); font-weight:800; margin-left:5px;">+</span>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.builder-search-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const exercise = el.dataset.exercise;
+      const bodyPart = el.dataset.bodypart;
+      const alreadyIn = state.builderExercises.some(e=> e.exercise===exercise && e.bodyPart===bodyPart);
+      if(alreadyIn){ showToast('이미 목록에 추가된 운동이에요'); return; }
+      const emptyIdx = state.builderExercises.findIndex(e=> e.exercise.trim()==='');
+      if(emptyIdx!==-1){
+        state.builderExercises[emptyIdx] = { bodyPart, exercise };
+      } else {
+        state.builderExercises.push({ bodyPart, exercise });
+      }
+      renderBuilderRows();
+      showToast(`"${exercise}" 추가됨`);
+    });
+  });
+}
+
+document.getElementById('builderSearchInput').addEventListener('input', renderBuilderSearchResults);
 
 function renderBuilderRows(){
   const wrap = document.getElementById('builderExRows');
