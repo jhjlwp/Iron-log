@@ -227,10 +227,16 @@
   .mini-plate.empty .w{ color:var(--text-faint); }
   .mini-plate .r{ font-size:9px; color:var(--text-dim); margin-top:1px; }
   .entry-mid{ flex:1; min-width:0; }
-  .entry-sets{ font-size:14.5px; color:var(--text-dim); font-weight:600; }
+  .entry-sets{ font-size:14.5px; color:var(--text-dim); font-weight:600; display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
   .entry-memo{ font-size:13.5px; color:var(--text-faint); margin-top:3px; line-height:1.4; word-break:break-word; }
   .mini-plate-pair{ display:flex; align-items:center; gap:4px; flex:0 0 auto; }
   .ss-plus{ color:var(--text-faint); font-size:13px; font-weight:700; }
+  .ss-reps-pair{ font-size:14.5px; color:var(--text-dim); font-weight:600; }
+  .ss-plus-inline{ color:var(--text-faint); font-size:12px; font-weight:800; margin:0 5px; }
+  .entry-sets-badge{
+    font-size:12px; font-weight:800; color:var(--plate);
+    background:var(--accent-dim); padding:2px 9px; border-radius:999px;
+  }
   .ss-tag{
     font-size:10px; font-weight:800; color:#FFFBF0; background:var(--plate);
     padding:2px 7px; border-radius:6px; margin-left:6px; vertical-align:middle;
@@ -477,7 +483,7 @@
         </div>
         <div class="field">
           <label>운동명 <span id="logExerciseLabelTag" style="color:var(--text-faint); font-weight:500; text-transform:none;"></span></label>
-          <input type="text" id="exerciseInput" placeholder="예: 벤치프레스" list="exerciseSuggestions">
+          <input type="text" lang="ko" id="exerciseInput" placeholder="예: 벤치프레스" list="exerciseSuggestions">
           <datalist id="exerciseSuggestions"></datalist>
         </div>
         <div class="row2">
@@ -505,7 +511,7 @@
           </div>
           <div class="field">
             <label>운동명 (운동2)</label>
-            <input type="text" id="ssExerciseInput" placeholder="예: 벤트오버 로우" list="exerciseSuggestions">
+            <input type="text" lang="ko" id="ssExerciseInput" placeholder="예: 벤트오버 로우" list="exerciseSuggestions">
           </div>
           <div class="row2">
             <div class="field">
@@ -526,10 +532,22 @@
           </div>
           <div class="field">
             <label>메모 <span style="color:var(--text-faint); font-weight:500; text-transform:none;">선택</span></label>
-            <input type="text" id="memoInput" placeholder="예: 폼 신경쓰기">
+            <input type="text" lang="ko" id="memoInput" placeholder="예: 폼 신경쓰기">
           </div>
         </div>
         <button class="btn btn-primary" id="addSetBtn">+ 기록 추가</button>
+      </div>
+
+      <div class="section-label">다른 날짜 기록 복사</div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="field" style="margin-bottom:8px;">
+          <label>복사할 날짜</label>
+          <input type="date" id="copyDateInput">
+        </div>
+        <div id="copyDatePreview" style="font-size:12.5px; color:var(--text-faint); margin-bottom:10px;"></div>
+        <button class="btn btn-ghost" style="width:100%;" id="copyDateBtn">
+          <span id="copyDateBtnLabel">선택한 날짜의 기록을 오늘로 복사</span>
+        </button>
       </div>
 
       <div class="section-label">
@@ -545,7 +563,7 @@
     <section class="view" id="view-history">
       <div class="search-bar">
         <span class="icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="운동명으로 검색">
+        <input type="text" lang="ko" id="searchInput" placeholder="운동명으로 검색">
       </div>
       <div class="chip-row" id="historyBodyPartFilter" style="margin-bottom:14px;"></div>
 
@@ -575,13 +593,13 @@
     <section class="view" id="view-builder">
       <div class="section-label">루틴 이름</div>
       <div class="card" style="margin-bottom:16px;">
-        <input type="text" id="builderNameInput" placeholder="예: 가슴/삼두 루틴">
+        <input type="text" lang="ko" id="builderNameInput" placeholder="예: 가슴/삼두 루틴">
       </div>
 
       <div class="section-label">기존 운동에서 찾아 추가</div>
       <div class="card" style="margin-bottom:16px;">
         <div class="field" style="margin-bottom:10px;">
-          <input type="text" id="builderSearchInput" placeholder="예: 벤치프레스">
+          <input type="text" lang="ko" id="builderSearchInput" placeholder="예: 벤치프레스">
         </div>
         <div id="builderSearchResults" class="exercise-quick-list"></div>
       </div>
@@ -607,7 +625,7 @@
         </div>
         <div class="field">
           <label>운동명</label>
-          <input type="text" id="editExerciseInput" placeholder="운동명" list="exerciseSuggestions">
+          <input type="text" lang="ko" id="editExerciseInput" placeholder="운동명" list="exerciseSuggestions">
         </div>
         <div class="row2">
           <div class="field">
@@ -634,7 +652,7 @@
           </div>
           <div class="field">
             <label>운동명 (운동2)</label>
-            <input type="text" id="editSsExerciseInput" placeholder="운동명" list="exerciseSuggestions">
+            <input type="text" lang="ko" id="editSsExerciseInput" placeholder="운동명" list="exerciseSuggestions">
           </div>
           <div class="row2">
             <div class="field">
@@ -655,7 +673,7 @@
           </div>
           <div class="field">
             <label>메모</label>
-            <input type="text" id="editMemoInput" placeholder="메모">
+            <input type="text" lang="ko" id="editMemoInput" placeholder="메모">
           </div>
         </div>
       </div>
@@ -1032,23 +1050,37 @@ function buildExerciseGroupsHtml(entriesArr){
     const entriesHtml = g.entries.map(s=>{
       const hasReps = s.reps!==null && s.reps!==undefined && s.reps!=='';
       const hasSets = s.sets!==null && s.sets!==undefined && s.sets!=='';
-      const summary = [
-        hasReps ? `${s.reps}회` : null,
-        hasSets ? `${s.sets}세트` : null
-      ].filter(Boolean).join(' · ') || '세부 기록 없음';
-      const ssSummary = s.superset
-        ? [ (s.superset.reps!==null && s.superset.reps!==undefined && s.superset.reps!=='') ? `${s.superset.reps}회` : null ].filter(Boolean).join(' · ')
-        : '';
+
+      let midHtml;
+      if(s.superset){
+        const ssHasReps = s.superset.reps!==null && s.superset.reps!==undefined && s.superset.reps!=='';
+        const r1 = hasReps ? `${s.reps}회` : '–';
+        const r2 = ssHasReps ? `${s.superset.reps}회` : '–';
+        midHtml = `
+          <div class="entry-sets">
+            <span class="ss-reps-pair">${r1}<span class="ss-plus-inline">＋</span>${r2}</span>
+            <span class="entry-sets-badge">${hasSets ? s.sets+'세트' : '세트 미기록'}</span>
+          </div>
+          ${s.memo ? `<div class="entry-memo">📝 ${escapeHtml(s.memo)}</div>` : ''}
+        `;
+      } else {
+        const summary = [
+          hasReps ? `${s.reps}회` : null,
+          hasSets ? `${s.sets}세트` : null
+        ].filter(Boolean).join(' · ') || '세부 기록 없음';
+        midHtml = `
+          <div class="entry-sets">${summary}</div>
+          ${s.memo ? `<div class="entry-memo">📝 ${escapeHtml(s.memo)}</div>` : ''}
+        `;
+      }
+
       return `
         <div class="entry-row" data-id="${s.id}">
           <div class="mini-plate-pair">
             ${miniPlateHtml(s.weight)}
             ${s.superset ? '<span class="ss-plus">＋</span>' + miniPlateHtml(s.superset.weight) : ''}
           </div>
-          <div class="entry-mid">
-            <div class="entry-sets">${summary}${s.superset && ssSummary ? ` <span style="color:var(--text-faint);">(운동2: ${ssSummary})</span>` : ''}</div>
-            ${s.memo ? `<div class="entry-memo">📝 ${escapeHtml(s.memo)}</div>` : ''}
-          </div>
+          <div class="entry-mid">${midHtml}</div>
         </div>
       `;
     }).join('');
@@ -1084,6 +1116,53 @@ function renderTodayList(){
 document.getElementById('dateInput').addEventListener('change', (e)=>{
   state.selectedDate = e.target.value || todayStr();
   renderTodayList();
+  updateCopyDateBtnLabel();
+});
+
+function updateCopyDateBtnLabel(){
+  const isToday = state.selectedDate === todayStr();
+  document.getElementById('copyDateBtnLabel').textContent =
+    `선택한 날짜의 기록을 ${isToday ? '오늘' : fmtDateKo(state.selectedDate)}로 복사`;
+}
+
+function renderCopyDatePreview(){
+  const val = document.getElementById('copyDateInput').value;
+  const preview = document.getElementById('copyDatePreview');
+  if(!val){ preview.textContent = ''; return; }
+  const entries = logs.filter(l=>l.date===val);
+  if(entries.length===0){
+    preview.textContent = `${fmtDateKo(val)}엔 기록이 없어요.`;
+    return;
+  }
+  const names = [...new Set(entries.map(l=>l.exercise))];
+  const nameList = names.length>4 ? names.slice(0,4).join(', ') + ' 외' : names.join(', ');
+  preview.textContent = `${fmtDateKo(val)} · ${entries.length}건 (${nameList})`;
+}
+
+document.getElementById('copyDateInput').addEventListener('change', renderCopyDatePreview);
+
+document.getElementById('copyDateBtn').addEventListener('click', async ()=>{
+  const sourceDate = document.getElementById('copyDateInput').value;
+  if(!sourceDate){ showToast('복사할 날짜를 선택해주세요'); return; }
+  if(sourceDate === state.selectedDate){ showToast('현재 선택된 날짜와 같아요'); return; }
+  const sourceEntries = logs.filter(l=>l.date===sourceDate);
+  if(sourceEntries.length===0){ showToast('그 날짜엔 복사할 기록이 없어요'); return; }
+  sourceEntries.forEach(l=>{
+    logs.push({
+      id: uid(),
+      date: state.selectedDate,
+      bodyPart: l.bodyPart,
+      exercise: l.exercise,
+      weight: l.weight,
+      reps: l.reps,
+      sets: l.sets,
+      memo: l.memo,
+      superset: l.superset ? { ...l.superset } : null
+    });
+  });
+  await saveLogs();
+  renderAll();
+  showToast(`${sourceEntries.length}건을 복사했어요`);
 });
 
 document.getElementById('addSetBtn').addEventListener('click', async ()=>{
@@ -1609,7 +1688,7 @@ function renderBuilderRows(){
     row.innerHTML = `
       <div class="builder-ex-row-top">
         <select data-idx="${idx}" class="b-part">${options}</select>
-        <input type="text" data-idx="${idx}" class="b-name" placeholder="운동명" value="${escapeHtml(ex.exercise)}" list="exerciseSuggestions">
+        <input type="text" data-idx="${idx}" class="b-name" placeholder="운동명" value="${escapeHtml(ex.exercise)}" list="exerciseSuggestions" lang="ko">
       </div>
       <div class="builder-ex-row-bottom">
         <div class="b-field"><input type="number" data-idx="${idx}" class="b-weight" placeholder="–" inputmode="decimal" value="${weightVal}"><span class="b-unit">kg</span></div>
@@ -1695,6 +1774,7 @@ function renderAll(){
 async function startApp(){
   updateSyncBtnLabel();
   document.getElementById('dateInput').value = state.selectedDate;
+  updateCopyDateBtnLabel();
   await loadData();
   renderAll();
 }
