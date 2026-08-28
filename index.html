@@ -341,10 +341,23 @@
   .builder-ex-row-top{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
   .builder-ex-row-top select{ width:auto; flex:0 0 84px; padding:8px; font-size:12px; }
   .builder-ex-row-top input{ flex:1; padding:8px 10px; font-size:13px; }
-  .builder-ex-row-top .rm{ color:var(--text-faint); cursor:pointer; padding:4px 6px; font-size:16px; }
   .builder-ex-row-bottom{ display:flex; align-items:center; gap:6px; padding-left:2px; }
-  .builder-ex-row-bottom input{ flex:1; min-width:0; padding:7px 6px; font-size:12px; text-align:center; }
-  .builder-x{ color:var(--text-faint); font-size:11px; font-weight:700; flex:0 0 auto; }
+  .b-field{
+    flex:1; min-width:0; display:flex; align-items:baseline; justify-content:center; gap:3px;
+    background:var(--bg-card); border:1px solid var(--steel-light); border-radius:8px;
+    padding:7px 8px;
+  }
+  .b-field input{
+    width:100%; min-width:0; border:none; background:transparent;
+    padding:0; font-size:13px; font-weight:700; text-align:right;
+  }
+  .b-field input:focus{ outline:none; }
+  .b-unit{ font-size:11px; color:var(--text-faint); font-weight:700; white-space:nowrap; flex:0 0 auto; }
+  .builder-ex-row .rm{
+    text-align:right; margin-top:8px; padding-top:2px;
+    font-size:11.5px; color:var(--text-faint); cursor:pointer;
+  }
+  .builder-ex-row .rm:active{ color:var(--accent); }
 
   /* Bottom nav */
   nav.bottom{
@@ -1514,7 +1527,9 @@ function formatSetPreview(e){
 function renderBuilderSearchResults(){
   const q = document.getElementById('builderSearchInput').value.trim().toLowerCase();
   const known = getKnownExercises();
-  const filtered = q ? known.filter(k=> k.exercise.toLowerCase().includes(q)) : known.slice(0, 12);
+  const filtered = q
+    ? known.filter(k=> k.exercise.toLowerCase().includes(q) || k.bodyPart.toLowerCase().includes(q))
+    : known.slice(0, 12);
   const wrap = document.getElementById('builderSearchResults');
   wrap.innerHTML = '';
 
@@ -1527,7 +1542,7 @@ function renderBuilderSearchResults(){
     return;
   }
   filtered.forEach(k=>{
-    const previews = k.entries.map(formatSetPreview).filter(Boolean);
+    const previews = k.entries.map(e => formatSetPreview(e) || '값 없음');
     const label = previews.length===0 ? ''
       : previews.length===1 ? `최근 ${previews[0]}`
       : `최근 ${previews.length}세트: ${previews.join(' · ')}`;
@@ -1539,38 +1554,47 @@ function renderBuilderSearchResults(){
       <span style="color:var(--accent); font-weight:800; margin-left:5px;">+</span>
     `;
     el.addEventListener('click', ()=>{
-      // 마지막으로 수행한 날의 세트를 모두(무게·횟수가 저마다 달라도) 그대로 가져온다
+      // 마지막으로 수행한 날의 세트를 모두(무게·횟수가 동일하게 반복됐어도) 빠짐없이 그대로 가져온다
       const entriesToAdd = k.entries.length>0 ? k.entries : [{weight:null, reps:null, sets:null}];
-      let addedCount = 0;
+      let firstFilled = false;
       entriesToAdd.forEach(e=>{
-        const newEntry = { bodyPart: k.bodyPart, exercise: k.exercise, weight: e.weight, reps: e.reps, sets: e.sets };
-        const dup = state.builderExercises.some(x=>
-          x.exercise===newEntry.exercise && x.bodyPart===newEntry.bodyPart &&
-          x.weight===newEntry.weight && x.reps===newEntry.reps && x.sets===newEntry.sets
-        );
-        if(dup) return;
-        const emptyIdx = state.builderExercises.findIndex(x=> x.exercise.trim()==='');
-        if(emptyIdx!==-1){
-          state.builderExercises[emptyIdx] = newEntry;
-        } else {
-          state.builderExercises.push(newEntry);
+      const newEntry = { bodyPart: k.bodyPart, exercise: k.exercise, weight: e.weight, reps: e.reps, sets: (e.sets===null || e.sets===undefined) ? 1 : e.sets };
+        if(!firstFilled){
+          const emptyIdx = state.builderExercises.findIndex(x=> x.exercise.trim()==='');
+          if(emptyIdx!==-1){
+            state.builderExercises[emptyIdx] = newEntry;
+            firstFilled = true;
+            return;
+          }
         }
-        addedCount++;
+        state.builderExercises.push(newEntry);
       });
       renderBuilderRows();
-      if(addedCount===0){
-        showToast('이미 모두 추가된 세트예요');
-      } else if(addedCount>1){
-        showToast(`"${k.exercise}" ${addedCount}세트 그대로 추가됨`);
-      } else {
-        showToast(`"${k.exercise}" 추가됨`);
-      }
+      showToast(entriesToAdd.length>1 ? `"${k.exercise}" ${entriesToAdd.length}세트 그대로 추가됨` : `"${k.exercise}" 추가됨`);
     });
     wrap.appendChild(el);
   });
 }
 
 document.getElementById('builderSearchInput').addEventListener('input', renderBuilderSearchResults);
+
+function getLastPerformance(exerciseName){
+  if(!exerciseName) return null;
+  let result = null;
+  logs.forEach(l=>{
+    if(l.exercise===exerciseName){
+      if(!result || l.date >= result.date){
+        result = { bodyPart: l.bodyPart, weight: l.weight, reps: l.reps, sets: l.sets, date: l.date };
+      }
+    }
+    if(l.superset && l.superset.exercise===exerciseName){
+      if(!result || l.date >= result.date){
+        result = { bodyPart: l.superset.bodyPart, weight: l.superset.weight, reps: l.superset.reps, sets: l.sets, date: l.date };
+      }
+    }
+  });
+  return result;
+}
 
 function renderBuilderRows(){
   const wrap = document.getElementById('builderExRows');
@@ -1585,16 +1609,14 @@ function renderBuilderRows(){
     row.innerHTML = `
       <div class="builder-ex-row-top">
         <select data-idx="${idx}" class="b-part">${options}</select>
-        <input type="text" data-idx="${idx}" class="b-name" placeholder="운동명" value="${escapeHtml(ex.exercise)}">
-        <div class="rm" data-idx="${idx}">✕</div>
+        <input type="text" data-idx="${idx}" class="b-name" placeholder="운동명" value="${escapeHtml(ex.exercise)}" list="exerciseSuggestions">
       </div>
       <div class="builder-ex-row-bottom">
-        <input type="number" data-idx="${idx}" class="b-weight" placeholder="무게(kg)" inputmode="decimal" value="${weightVal}">
-        <span class="builder-x">×</span>
-        <input type="number" data-idx="${idx}" class="b-reps" placeholder="목표 횟수" inputmode="numeric" value="${repsVal}">
-        <span class="builder-x">×</span>
-        <input type="number" data-idx="${idx}" class="b-sets" placeholder="목표 세트" inputmode="numeric" value="${setsVal}">
+        <div class="b-field"><input type="number" data-idx="${idx}" class="b-weight" placeholder="–" inputmode="decimal" value="${weightVal}"><span class="b-unit">kg</span></div>
+        <div class="b-field"><input type="number" data-idx="${idx}" class="b-reps" placeholder="–" inputmode="numeric" value="${repsVal}"><span class="b-unit">회</span></div>
+        <div class="b-field"><input type="number" data-idx="${idx}" class="b-sets" placeholder="–" inputmode="numeric" value="${setsVal}"><span class="b-unit">세트</span></div>
       </div>
+      <div class="rm" data-idx="${idx}">삭제</div>
     `;
     wrap.appendChild(row);
   });
@@ -1603,6 +1625,17 @@ function renderBuilderRows(){
   });
   wrap.querySelectorAll('.b-name').forEach(el=>{
     el.addEventListener('input', ()=>{ state.builderExercises[el.dataset.idx].exercise = el.value; });
+    el.addEventListener('change', ()=>{
+      const idx = el.dataset.idx;
+      const current = state.builderExercises[idx];
+      const last = getLastPerformance(el.value.trim());
+      if(!last) return;
+      let changed = false;
+      if(current.weight===null || current.weight===undefined){ current.weight = last.weight; changed = true; }
+      if(current.reps===null || current.reps===undefined){ current.reps = last.reps; changed = true; }
+      if(current.sets===null || current.sets===undefined){ current.sets = (last.sets===null || last.sets===undefined) ? 1 : last.sets; changed = true; }
+      if(changed){ renderBuilderRows(); showToast('지난 기록 기준으로 목표를 채웠어요'); }
+    });
   });
   wrap.querySelectorAll('.b-weight').forEach(el=>{
     el.addEventListener('input', ()=>{ state.builderExercises[el.dataset.idx].weight = el.value===''? null : Number(el.value); });
