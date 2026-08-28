@@ -704,7 +704,7 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
 
-const BODY_PARTS = ["가슴","등","어깨","팔","다리","복근","유산소","기타"];
+const BODY_PARTS = ["가슴","등","어깨","팔","다리","하체","복근","유산소","기타"];
 
 let logs = [];       // {id, date:'YYYY-MM-DD', bodyPart, exercise, weight, reps, sets}
 let routines = [];   // {id, name, exercises:[{bodyPart, exercise}]}
