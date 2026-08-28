@@ -244,6 +244,35 @@
   .search-bar input{ padding-left:38px; }
   .search-bar .icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:0.5; }
 
+  /* CALENDAR */
+  .calendar-card{ padding:14px; margin-bottom:18px; }
+  .calendar-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .calendar-title{ font-size:15.5px; font-weight:800; font-family:'JetBrains Mono',monospace; }
+  .cal-nav{
+    width:32px; height:32px; border-radius:9px; border:1px solid var(--steel);
+    background:var(--bg-elevated); color:var(--text); font-size:17px; line-height:1;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .calendar-weekdays{
+    display:grid; grid-template-columns:repeat(7,1fr);
+    text-align:center; font-size:11px; color:var(--text-faint); font-weight:700;
+    margin-bottom:6px;
+  }
+  .calendar-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+  .cal-cell{
+    position:relative; aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:9px; cursor:pointer;
+  }
+  .cal-cell.empty{ cursor:default; }
+  .cal-day-num{ font-size:13px; color:var(--text-dim); font-family:'JetBrains Mono',monospace; }
+  .cal-cell.is-today .cal-day-num{ color:var(--text); font-weight:800; text-decoration:underline; text-underline-offset:3px; }
+  .cal-cell.has-log{ background:rgba(255,200,87,0.10); }
+  .cal-cell.has-log .cal-day-num{ color:var(--plate); font-weight:700; }
+  .cal-dot{ position:absolute; bottom:5px; width:5px; height:5px; border-radius:50%; background:var(--accent); }
+  .cal-cell.selected{ background:var(--accent); }
+  .cal-cell.selected .cal-day-num{ color:#1D0C0A; font-weight:800; text-decoration:none; }
+  .cal-cell.selected .cal-dot{ background:#1D0C0A; }
+
   .date-section{ margin-bottom:6px; }
   .date-header{
     display:flex; align-items:center; justify-content:space-between;
@@ -495,7 +524,21 @@
         <input type="text" id="searchInput" placeholder="운동명으로 검색">
       </div>
       <div class="chip-row" id="historyBodyPartFilter" style="margin-bottom:14px;"></div>
-      <div id="historyList"></div>
+
+      <div class="card calendar-card">
+        <div class="calendar-header">
+          <button class="cal-nav" id="calPrevBtn">‹</button>
+          <div class="calendar-title" id="calTitle"></div>
+          <button class="cal-nav" id="calNextBtn">›</button>
+        </div>
+        <div class="calendar-weekdays">
+          <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+        </div>
+        <div class="calendar-grid" id="calGrid"></div>
+      </div>
+
+      <div class="section-label" id="historyDetailLabel">날짜를 선택하세요</div>
+      <div id="historyDetailList"></div>
     </section>
 
     <!-- ===================== ROUTINE VIEW ===================== -->
@@ -647,7 +690,9 @@ let state = {
   supersetActive: false,
   ssBodyPart: BODY_PARTS[0],
   editSupersetActive: false,
-  editSsBodyPart: BODY_PARTS[0]
+  editSsBodyPart: BODY_PARTS[0],
+  historyCalendarMonth: null,
+  selectedHistoryDate: null
 };
 
 function todayStr(){
@@ -924,6 +969,56 @@ function miniPlateHtml(weight){
   `;
 }
 
+function buildExerciseGroupsHtml(entriesArr){
+  // group by exercise (슈퍼세트는 조합별로 별도 그룹), preserve order of first appearance
+  const groups = [];
+  const map = {};
+  entriesArr.forEach(l=>{
+    const key = l.superset ? `${l.exercise}__+__${l.superset.exercise}` : l.exercise;
+    if(!map[key]){
+      map[key] = { key, exercise:l.exercise, bodyPart:l.bodyPart, superset: l.superset ? {exercise:l.superset.exercise, bodyPart:l.superset.bodyPart} : null, entries:[] };
+      groups.push(map[key]);
+    }
+    map[key].entries.push(l);
+  });
+  return groups.map(g=>{
+    const titleHtml = g.superset
+      ? `${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span> <span style="color:var(--text-faint); margin:0 2px;">＋</span> ${escapeHtml(g.superset.exercise)}<span class="bodypart-tag">${g.superset.bodyPart}</span>`
+      : `${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span>`;
+    const entriesHtml = g.entries.map(s=>{
+      const hasReps = s.reps!==null && s.reps!==undefined && s.reps!=='';
+      const hasSets = s.sets!==null && s.sets!==undefined && s.sets!=='';
+      const summary = [
+        hasReps ? `${s.reps}회` : null,
+        hasSets ? `${s.sets}세트` : null
+      ].filter(Boolean).join(' · ') || '세부 기록 없음';
+      const ssSummary = s.superset
+        ? [ (s.superset.reps!==null && s.superset.reps!==undefined && s.superset.reps!=='') ? `${s.superset.reps}회` : null ].filter(Boolean).join(' · ')
+        : '';
+      return `
+        <div class="entry-row" data-id="${s.id}">
+          <div class="mini-plate-pair">
+            ${miniPlateHtml(s.weight)}
+            ${s.superset ? '<span class="ss-plus">＋</span>' + miniPlateHtml(s.superset.weight) : ''}
+          </div>
+          <div class="entry-mid">
+            <div class="entry-sets">${summary}${s.superset && ssSummary ? ` <span style="color:var(--text-faint);">(운동2: ${ssSummary})</span>` : ''}</div>
+            ${s.memo ? `<div class="entry-memo">📝 ${escapeHtml(s.memo)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+    return `
+      <div class="exercise-group">
+        <div class="exercise-group-head">
+          <div class="exercise-group-title">${titleHtml}${g.superset ? '<span class="ss-tag">슈퍼세트</span>' : ''}</div>
+        </div>
+        <div class="entries-col">${entriesHtml}</div>
+      </div>
+    `;
+  }).join('');
+}
+
 function renderTodayList(){
   const sel = state.selectedDate;
   const isToday = sel === todayStr();
@@ -932,59 +1027,11 @@ function renderTodayList(){
   const dayLogs = logs.filter(l=>l.date===sel);
   document.getElementById('todayCount').textContent = dayLogs.length;
   const wrap = document.getElementById('todayList');
-  wrap.innerHTML = '';
   if(dayLogs.length===0){
     wrap.innerHTML = `<div class="empty-state"><div class="big">🏋️</div><div class="msg">${isToday? '아직 오늘 기록이 없어요.' : '이 날짜의 기록이 없어요.'}<br>위에서 기록을 추가해보세요.</div></div>`;
     return;
   }
-  // group by exercise (슈퍼세트는 조합별로 별도 그룹), preserve order of first appearance
-  const groups = [];
-  const map = {};
-  dayLogs.forEach(l=>{
-    const key = l.superset ? `${l.exercise}__+__${l.superset.exercise}` : l.exercise;
-    if(!map[key]){
-      map[key] = { key, exercise:l.exercise, bodyPart:l.bodyPart, superset: l.superset ? {exercise:l.superset.exercise, bodyPart:l.superset.bodyPart} : null, entries:[] };
-      groups.push(map[key]);
-    }
-    map[key].entries.push(l);
-  });
-  groups.forEach(g=>{
-    const gDiv = document.createElement('div');
-    gDiv.className = 'exercise-group';
-    const titleHtml = g.superset
-      ? `${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span> <span style="color:var(--text-faint); margin:0 2px;">＋</span> ${escapeHtml(g.superset.exercise)}<span class="bodypart-tag">${g.superset.bodyPart}</span>`
-      : `${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span>`;
-    gDiv.innerHTML = `
-      <div class="exercise-group-head">
-        <div class="exercise-group-title">${titleHtml}${g.superset ? '<span class="ss-tag">슈퍼세트</span>' : ''}</div>
-      </div>
-      <div class="entries-col">
-        ${g.entries.map(s=>{
-          const hasReps = s.reps!==null && s.reps!==undefined && s.reps!=='';
-          const hasSets = s.sets!==null && s.sets!==undefined && s.sets!=='';
-          const summary = [
-            hasReps ? `${s.reps}회` : null,
-            hasSets ? `${s.sets}세트` : null
-          ].filter(Boolean).join(' · ') || '세부 기록 없음';
-          const ssSummary = s.superset
-            ? [ (s.superset.reps!==null && s.superset.reps!==undefined && s.superset.reps!=='') ? `${s.superset.reps}회` : null ].filter(Boolean).join(' · ')
-            : '';
-          return `
-          <div class="entry-row" data-id="${s.id}">
-            <div class="mini-plate-pair">
-              ${miniPlateHtml(s.weight)}
-              ${s.superset ? '<span class="ss-plus">＋</span>' + miniPlateHtml(s.superset.weight) : ''}
-            </div>
-            <div class="entry-mid">
-              <div class="entry-sets">${summary}${s.superset && ssSummary ? ` <span style="color:var(--text-faint);">(운동2: ${ssSummary})</span>` : ''}</div>
-              ${s.memo ? `<div class="entry-memo">📝 ${escapeHtml(s.memo)}</div>` : ''}
-            </div>
-          </div>
-        `}).join('')}
-      </div>
-    `;
-    wrap.appendChild(gDiv);
-  });
+  wrap.innerHTML = buildExerciseGroupsHtml(dayLogs);
   wrap.querySelectorAll('.entry-row').forEach(el=>{
     el.addEventListener('click', ()=> openEdit(el.dataset.id));
   });
@@ -1166,16 +1213,9 @@ function renderHistoryFilterChips(){
   });
 }
 
-let openDates = new Set(); // dates currently expanded; most recent auto-opened on first render
-let historyInitialized = false;
-
-function renderHistory(){
-  renderHistoryFilterChips();
-  const listWrap = document.getElementById('historyList');
-  listWrap.innerHTML = '';
-
+function getFilteredHistoryLogs(){
   const q = state.searchQuery.trim().toLowerCase();
-  let filtered = logs.filter(l=>{
+  return logs.filter(l=>{
     const matchesBodyPart = state.historyBodyPartFilter==='all'
       || l.bodyPart===state.historyBodyPartFilter
       || (l.superset && l.superset.bodyPart===state.historyBodyPartFilter);
@@ -1187,103 +1227,95 @@ function renderHistory(){
     }
     return true;
   });
+}
 
-  if(filtered.length===0){
-    listWrap.innerHTML = `<div class="empty-state"><div class="big">📖</div><div class="msg">조건에 맞는 기록이 없어요.</div></div>`;
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function renderCalendarGrid(){
+  const filtered = getFilteredHistoryLogs();
+  const matchedDates = new Set(filtered.map(l=>l.date));
+  const { year, month } = state.historyCalendarMonth;
+
+  document.getElementById('calTitle').textContent = `${year}년 ${month+1}월`;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayS = todayStr();
+
+  for(let i=0;i<firstDay;i++){
+    const empty = document.createElement('div');
+    empty.className = 'cal-cell empty';
+    grid.appendChild(empty);
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${year}-${pad2(month+1)}-${pad2(d)}`;
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+    if(dateStr===todayS) cell.classList.add('is-today');
+    if(matchedDates.has(dateStr)) cell.classList.add('has-log');
+    if(dateStr===state.selectedHistoryDate) cell.classList.add('selected');
+    cell.innerHTML = `<span class="cal-day-num">${d}</span>${matchedDates.has(dateStr) ? '<span class="cal-dot"></span>' : ''}`;
+    cell.addEventListener('click', ()=>{
+      state.selectedHistoryDate = dateStr;
+      renderCalendarGrid();
+      renderHistoryDetail();
+    });
+    grid.appendChild(cell);
+  }
+}
+
+function renderHistoryDetail(){
+  const label = document.getElementById('historyDetailLabel');
+  const wrap = document.getElementById('historyDetailList');
+  if(!state.selectedHistoryDate){
+    label.textContent = '날짜를 선택하세요';
+    wrap.innerHTML = '';
     return;
   }
+  const filtered = getFilteredHistoryLogs().filter(l=>l.date===state.selectedHistoryDate);
+  label.innerHTML = `<span class="label-with-count"><span>${fmtDateKo(state.selectedHistoryDate)}</span><span class="count-pill">🏋️‍♀️ ${filtered.length}</span></span>`;
 
-  const byDate = {};
-  filtered.forEach(l=>{
-    if(!byDate[l.date]) byDate[l.date] = [];
-    byDate[l.date].push(l);
-  });
-  const dates = Object.keys(byDate).sort((a,b)=> b.localeCompare(a));
-
-  if(!historyInitialized && dates.length>0){
-    openDates.add(dates[0]);
-    historyInitialized = true;
+  if(filtered.length===0){
+    wrap.innerHTML = `<div class="empty-state"><div class="big">📖</div><div class="msg">이 날짜엔 조건에 맞는 기록이 없어요.</div></div>`;
+    return;
   }
-
-  dates.forEach(date=>{
-    const entries = byDate[date];
-    const isOpen = openDates.has(date);
-    const totalSets = entries.reduce((sum,e)=>sum+(e.sets||0),0);
-    const exerciseCount = new Set(entries.map(e=>e.exercise)).size;
-
-    const section = document.createElement('div');
-    section.className = 'date-section';
-
-    const header = document.createElement('div');
-    header.className = 'date-header' + (isOpen?' open':'');
-    header.innerHTML = `
-      <div class="left">
-        <span class="name">${fmtDateKo(date)}</span>
-        <span class="sub">운동 ${exerciseCount}개 · ${totalSets}세트</span>
-      </div>
-      <div class="right"><span class="chevron">›</span></div>
-    `;
-    header.addEventListener('click', ()=>{
-      if(openDates.has(date)) openDates.delete(date); else openDates.add(date);
-      renderHistory();
-    });
-    section.appendChild(header);
-
-    const body = document.createElement('div');
-    body.className = 'date-body' + (isOpen?' open':'');
-
-    entries.forEach(l=>{
-      const hasWeight = l.weight!==null && l.weight!==undefined && l.weight!=='';
-      const hasReps = l.reps!==null && l.reps!==undefined && l.reps!=='';
-      const hasSets = l.sets!==null && l.sets!==undefined && l.sets!=='';
-
-      const row = document.createElement('div');
-      row.addEventListener('click', ()=> openEdit(l.id));
-
-      if(l.superset){
-        const ssHasWeight = l.superset.weight!==null && l.superset.weight!==undefined && l.superset.weight!=='';
-        const ssHasReps = l.superset.reps!==null && l.superset.reps!==undefined && l.superset.reps!=='';
-        const nameHtml = `${escapeHtml(l.exercise)}<span class="bodypart-tag">${l.bodyPart}</span> <span style="color:var(--text-faint);">＋</span> ${escapeHtml(l.superset.exercise)}<span class="bodypart-tag">${l.superset.bodyPart}</span><span class="ss-tag">슈퍼세트</span>`;
-
-        row.className = 'history-entry history-entry-ss';
-        row.innerHTML = `
-          <div class="info" style="width:100%;">
-            <div class="ex-name">${nameHtml}</div>
-            <div class="ss-lines">
-              <div class="ss-line">
-                <span class="ss-line-ex">${escapeHtml(l.exercise)}</span>
-                <span class="ss-line-stat">${hasWeight ? l.weight+'kg' : '–'} · ${hasReps ? l.reps+'회' : '–'}</span>
-              </div>
-              <div class="ss-line">
-                <span class="ss-line-ex">${escapeHtml(l.superset.exercise)}</span>
-                <span class="ss-line-stat">${ssHasWeight ? l.superset.weight+'kg' : '–'} · ${ssHasReps ? l.superset.reps+'회' : '–'}</span>
-              </div>
-            </div>
-            ${hasSets ? `<div class="ex-detail" style="margin-top:5px;">${l.sets}세트</div>` : ''}
-            ${l.memo ? `<div class="ex-detail" style="margin-top:3px;">📝 ${escapeHtml(l.memo)}</div>` : ''}
-          </div>
-        `;
-      } else {
-        const detail = [
-          hasReps ? `${l.reps}회` : null,
-          hasSets ? `${l.sets}세트` : null
-        ].filter(Boolean).join(' · ') || '상세 없음';
-        row.className = 'history-entry';
-        row.innerHTML = `
-          <div class="info">
-            <div class="ex-name">${escapeHtml(l.exercise)}<span class="bodypart-tag">${l.bodyPart}</span></div>
-            <div class="ex-detail">${detail}</div>
-            ${l.memo ? `<div class="ex-detail" style="margin-top:3px;">📝 ${escapeHtml(l.memo)}</div>` : ''}
-          </div>
-          <div class="stat">${hasWeight ? l.weight+'kg' : '–'}</div>
-        `;
-      }
-      body.appendChild(row);
-    });
-
-    section.appendChild(body);
-    listWrap.appendChild(section);
+  wrap.innerHTML = buildExerciseGroupsHtml(filtered);
+  wrap.querySelectorAll('.entry-row').forEach(el=>{
+    el.addEventListener('click', ()=> openEdit(el.dataset.id));
   });
+}
+
+document.getElementById('calPrevBtn').addEventListener('click', ()=>{
+  state.historyCalendarMonth.month -= 1;
+  if(state.historyCalendarMonth.month < 0){
+    state.historyCalendarMonth.month = 11;
+    state.historyCalendarMonth.year -= 1;
+  }
+  renderCalendarGrid();
+});
+document.getElementById('calNextBtn').addEventListener('click', ()=>{
+  state.historyCalendarMonth.month += 1;
+  if(state.historyCalendarMonth.month > 11){
+    state.historyCalendarMonth.month = 0;
+    state.historyCalendarMonth.year += 1;
+  }
+  renderCalendarGrid();
+});
+
+function renderHistory(){
+  renderHistoryFilterChips();
+
+  if(!state.historyCalendarMonth){
+    const dates = logs.map(l=>l.date).sort();
+    const base = dates.length ? dates[dates.length-1] : todayStr();
+    const [y,m] = base.split('-').map(Number);
+    state.historyCalendarMonth = { year:y, month:m-1 };
+    if(!state.selectedHistoryDate) state.selectedHistoryDate = base;
+  }
+  renderCalendarGrid();
+  renderHistoryDetail();
 }
 
 document.getElementById('searchInput').addEventListener('input', (e)=>{
