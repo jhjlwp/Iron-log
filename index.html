@@ -273,6 +273,12 @@
   .cal-cell.selected .cal-day-num{ color:#1D0C0A; font-weight:800; text-decoration:none; }
   .cal-cell.selected .cal-dot{ background:#1D0C0A; }
 
+  .history-date-block{ margin-bottom:22px; }
+  .history-date-block-title{
+    font-size:13px; font-weight:800; color:var(--text-dim);
+    margin:4px 2px 10px; padding-bottom:8px; border-bottom:1px solid #24262C;
+  }
+
   .date-section{ margin-bottom:6px; }
   .date-header{
     display:flex; align-items:center; justify-content:space-between;
@@ -1202,13 +1208,13 @@ function renderHistoryFilterChips(){
   const allChip = document.createElement('div');
   allChip.className = 'chip plate-style' + (state.historyBodyPartFilter==='all' ? ' active':'');
   allChip.textContent = '전체';
-  allChip.addEventListener('click', ()=>{ state.historyBodyPartFilter='all'; renderHistory(); });
+  allChip.addEventListener('click', ()=>{ state.historyBodyPartFilter='all'; state.selectedHistoryDate=null; renderHistory(); });
   wrap.appendChild(allChip);
   BODY_PARTS.forEach(bp=>{
     const chip = document.createElement('div');
     chip.className = 'chip plate-style' + (state.historyBodyPartFilter===bp ? ' active':'');
     chip.textContent = bp;
-    chip.addEventListener('click', ()=>{ state.historyBodyPartFilter=bp; renderHistory(); });
+    chip.addEventListener('click', ()=>{ state.historyBodyPartFilter=bp; state.selectedHistoryDate=null; renderHistory(); });
     wrap.appendChild(chip);
   });
 }
@@ -1266,25 +1272,70 @@ function renderCalendarGrid(){
   }
 }
 
+function isHistoryFilterActive(){
+  return state.historyBodyPartFilter!=='all' || state.searchQuery.trim()!=='';
+}
+
 function renderHistoryDetail(){
   const label = document.getElementById('historyDetailLabel');
   const wrap = document.getElementById('historyDetailList');
-  if(!state.selectedHistoryDate){
-    label.textContent = '날짜를 선택하세요';
-    wrap.innerHTML = '';
-    return;
-  }
-  const filtered = getFilteredHistoryLogs().filter(l=>l.date===state.selectedHistoryDate);
-  label.innerHTML = `<span class="label-with-count"><span>${fmtDateKo(state.selectedHistoryDate)}</span><span class="count-pill">🏋️‍♀️ ${filtered.length}</span></span>`;
+  const filterActive = isHistoryFilterActive();
+  const filteredAll = getFilteredHistoryLogs();
 
-  if(filtered.length===0){
-    wrap.innerHTML = `<div class="empty-state"><div class="big">📖</div><div class="msg">이 날짜엔 조건에 맞는 기록이 없어요.</div></div>`;
+  // 특정 날짜를 선택한 경우 (달력에서 날짜를 탭했을 때) - 필터 적용 여부와 무관하게 그 날짜만 표시
+  if(state.selectedHistoryDate){
+    const dayEntries = filteredAll.filter(l=>l.date===state.selectedHistoryDate);
+    label.innerHTML = `
+      <span class="label-with-count">
+        <span>${fmtDateKo(state.selectedHistoryDate)}</span>
+        <span class="count-pill">🏋️‍♀️ ${dayEntries.length}</span>
+      </span>
+      ${filterActive ? `<span class="link" id="showAllDatesLink">전체 날짜 보기</span>` : ''}
+    `;
+    if(dayEntries.length===0){
+      wrap.innerHTML = `<div class="empty-state"><div class="big">📖</div><div class="msg">이 날짜엔 조건에 맞는 기록이 없어요.</div></div>`;
+    } else {
+      wrap.innerHTML = buildExerciseGroupsHtml(dayEntries);
+      wrap.querySelectorAll('.entry-row').forEach(el=>{
+        el.addEventListener('click', ()=> openEdit(el.dataset.id));
+      });
+    }
+    const link = document.getElementById('showAllDatesLink');
+    if(link){
+      link.addEventListener('click', ()=>{
+        state.selectedHistoryDate = null;
+        renderCalendarGrid();
+        renderHistoryDetail();
+      });
+    }
     return;
   }
-  wrap.innerHTML = buildExerciseGroupsHtml(filtered);
-  wrap.querySelectorAll('.entry-row').forEach(el=>{
-    el.addEventListener('click', ()=> openEdit(el.dataset.id));
-  });
+
+  // 필터/검색이 걸려있고 특정 날짜를 선택하지 않은 경우 - 날짜에 상관없이 조건에 맞는 전체 기록을 나열
+  if(filterActive){
+    if(filteredAll.length===0){
+      label.textContent = '조건에 맞는 기록이 없어요';
+      wrap.innerHTML = `<div class="empty-state"><div class="big">📖</div><div class="msg">조건에 맞는 기록이 없어요.</div></div>`;
+      return;
+    }
+    label.innerHTML = `<span class="label-with-count"><span>전체 기록</span><span class="count-pill">🏋️‍♀️ ${filteredAll.length}</span></span>`;
+    const byDate = {};
+    filteredAll.forEach(l=>{ (byDate[l.date] = byDate[l.date] || []).push(l); });
+    const dates = Object.keys(byDate).sort((a,b)=> b.localeCompare(a));
+    wrap.innerHTML = dates.map(d=>`
+      <div class="history-date-block">
+        <div class="history-date-block-title">${fmtDateKo(d)}</div>
+        ${buildExerciseGroupsHtml(byDate[d])}
+      </div>
+    `).join('');
+    wrap.querySelectorAll('.entry-row').forEach(el=>{
+      el.addEventListener('click', ()=> openEdit(el.dataset.id));
+    });
+    return;
+  }
+
+  label.textContent = '날짜를 선택하세요';
+  wrap.innerHTML = '';
 }
 
 document.getElementById('calPrevBtn').addEventListener('click', ()=>{
@@ -1312,7 +1363,10 @@ function renderHistory(){
     const base = dates.length ? dates[dates.length-1] : todayStr();
     const [y,m] = base.split('-').map(Number);
     state.historyCalendarMonth = { year:y, month:m-1 };
-    if(!state.selectedHistoryDate) state.selectedHistoryDate = base;
+  }
+  if(state.selectedHistoryDate===null && !isHistoryFilterActive()){
+    const dates = logs.map(l=>l.date).sort();
+    if(dates.length) state.selectedHistoryDate = dates[dates.length-1];
   }
   renderCalendarGrid();
   renderHistoryDetail();
@@ -1320,6 +1374,7 @@ function renderHistory(){
 
 document.getElementById('searchInput').addEventListener('input', (e)=>{
   state.searchQuery = e.target.value;
+  state.selectedHistoryDate = null;
   renderHistory();
 });
 
