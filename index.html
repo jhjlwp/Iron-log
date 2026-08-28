@@ -342,9 +342,9 @@
   .builder-ex-row-top select{ width:auto; flex:0 0 84px; padding:8px; font-size:12px; }
   .builder-ex-row-top input{ flex:1; padding:8px 10px; font-size:13px; }
   .builder-ex-row-top .rm{ color:var(--text-faint); cursor:pointer; padding:4px 6px; font-size:16px; }
-  .builder-ex-row-bottom{ display:flex; align-items:center; gap:8px; padding-left:2px; }
-  .builder-ex-row-bottom input{ flex:1; padding:7px 10px; font-size:12.5px; }
-  .builder-x{ color:var(--text-faint); font-size:12px; font-weight:700; }
+  .builder-ex-row-bottom{ display:flex; align-items:center; gap:6px; padding-left:2px; }
+  .builder-ex-row-bottom input{ flex:1; min-width:0; padding:7px 6px; font-size:12px; text-align:center; }
+  .builder-x{ color:var(--text-faint); font-size:11px; font-weight:700; flex:0 0 auto; }
 
   /* Bottom nav */
   nav.bottom{
@@ -959,9 +959,11 @@ function renderRoutinePickRow(){
       r.exercises.forEach(ex=>{
         const q = document.createElement('div');
         q.className = 'exercise-quick';
+        const hasWeight = ex.weight!==null && ex.weight!==undefined && ex.weight!=='';
         const hasReps = ex.reps!==null && ex.reps!==undefined && ex.reps!=='';
         const hasSets = ex.sets!==null && ex.sets!==undefined && ex.sets!=='';
         const targetLabel = [
+          hasWeight ? `${ex.weight}kg` : null,
           hasReps ? `${ex.reps}회` : null,
           hasSets ? `${ex.sets}세트` : null
         ].filter(Boolean).join(' · ');
@@ -970,6 +972,7 @@ function renderRoutinePickRow(){
           document.getElementById('exerciseInput').value = ex.exercise;
           state.logBodyPart = ex.bodyPart;
           renderLogBodyPartChips();
+          document.getElementById('weightInput').value = hasWeight ? ex.weight : '';
           document.getElementById('repsInput').value = hasReps ? ex.reps : '';
           document.getElementById('setsInput').value = hasSets ? ex.sets : '';
           document.getElementById('weightInput').focus();
@@ -1420,9 +1423,11 @@ function renderRoutineList(){
       </div>
       <div class="routine-ex-list">
         ${r.exercises.map(ex=>{
+          const hasWeight = ex.weight!==null && ex.weight!==undefined && ex.weight!=='';
           const hasReps = ex.reps!==null && ex.reps!==undefined && ex.reps!=='';
           const hasSets = ex.sets!==null && ex.sets!==undefined && ex.sets!=='';
           const targetLabel = [
+            hasWeight ? `${ex.weight}kg` : null,
             hasReps ? `${ex.reps}회` : null,
             hasSets ? `${ex.sets}세트` : null
           ].filter(Boolean).join(' · ');
@@ -1459,7 +1464,7 @@ function openBuilder(routineId){
   state.editingRoutineId = routineId;
   const existing = routineId ? routines.find(r=>r.id===routineId) : null;
   document.getElementById('builderNameInput').value = existing ? existing.name : '';
-  state.builderExercises = existing ? JSON.parse(JSON.stringify(existing.exercises)) : [{bodyPart:BODY_PARTS[0], exercise:'', reps:null, sets:null}];
+  state.builderExercises = existing ? JSON.parse(JSON.stringify(existing.exercises)) : [{bodyPart:BODY_PARTS[0], exercise:'', weight:null, reps:null, sets:null}];
   renderBuilderRows();
   document.getElementById('builderSearchInput').value = '';
   renderBuilderSearchResults();
@@ -1468,24 +1473,42 @@ function openBuilder(routineId){
 }
 
 function getKnownExercises(){
-  const map = {}; // exercise -> { bodyPart, reps, sets, lastDate }
+  const map = {}; // exercise -> { bodyPart, lastDate, entries: [{weight,reps,sets}] }
   logs.forEach(l=>{
     if(l.exercise){
       const prev = map[l.exercise];
-      if(!prev || l.date >= prev.lastDate){
-        map[l.exercise] = { bodyPart: l.bodyPart, reps: l.reps, sets: l.sets, lastDate: l.date };
+      const entry = { weight: l.weight, reps: l.reps, sets: l.sets };
+      if(!prev || l.date > prev.lastDate){
+        map[l.exercise] = { bodyPart: l.bodyPart, lastDate: l.date, entries: [entry] };
+      } else if(l.date === prev.lastDate){
+        prev.entries.push(entry);
       }
     }
     if(l.superset && l.superset.exercise){
-      const prev2 = map[l.superset.exercise];
-      if(!prev2 || l.date >= prev2.lastDate){
-        map[l.superset.exercise] = { bodyPart: l.superset.bodyPart, reps: l.superset.reps, sets: l.sets, lastDate: l.date };
+      const key = l.superset.exercise;
+      const prev2 = map[key];
+      const entry2 = { weight: l.superset.weight, reps: l.superset.reps, sets: l.sets };
+      if(!prev2 || l.date > prev2.lastDate){
+        map[key] = { bodyPart: l.superset.bodyPart, lastDate: l.date, entries: [entry2] };
+      } else if(l.date === prev2.lastDate){
+        prev2.entries.push(entry2);
       }
     }
   });
   return Object.entries(map)
-    .map(([exercise, v])=>({ exercise, bodyPart: v.bodyPart, reps: v.reps, sets: v.sets }))
+    .map(([exercise, v])=>({ exercise, bodyPart: v.bodyPart, entries: v.entries }))
     .sort((a,b)=> a.exercise.localeCompare(b.exercise, 'ko'));
+}
+
+function formatSetPreview(e){
+  const hasWeight = e.weight!==null && e.weight!==undefined && e.weight!=='';
+  const hasReps = e.reps!==null && e.reps!==undefined && e.reps!=='';
+  const hasSets = e.sets!==null && e.sets!==undefined && e.sets!=='';
+  return [
+    hasWeight ? `${e.weight}kg` : null,
+    hasReps ? `${e.reps}회` : null,
+    hasSets ? `${e.sets}세트` : null
+  ].filter(Boolean).join(' ');
 }
 
 function renderBuilderSearchResults(){
@@ -1504,31 +1527,44 @@ function renderBuilderSearchResults(){
     return;
   }
   filtered.forEach(k=>{
-    const hasReps = k.reps!==null && k.reps!==undefined && k.reps!=='';
-    const hasSets = k.sets!==null && k.sets!==undefined && k.sets!=='';
-    const targetLabel = [
-      hasReps ? `${k.reps}회` : null,
-      hasSets ? `${k.sets}세트` : null
-    ].filter(Boolean).join(' · ');
+    const previews = k.entries.map(formatSetPreview).filter(Boolean);
+    const label = previews.length===0 ? ''
+      : previews.length===1 ? `최근 ${previews[0]}`
+      : `최근 ${previews.length}세트: ${previews.join(' · ')}`;
     const el = document.createElement('div');
     el.className = 'exercise-quick builder-search-item';
     el.innerHTML = `
       ${escapeHtml(k.exercise)}<span class="bodypart-tag" style="margin-left:5px;">${k.bodyPart}</span>
-      ${targetLabel ? `<span style="color:var(--text-faint); font-size:11px; margin-left:5px;">최근 ${targetLabel}</span>` : ''}
+      ${label ? `<span style="color:var(--text-faint); font-size:11px; margin-left:5px;">${label}</span>` : ''}
       <span style="color:var(--accent); font-weight:800; margin-left:5px;">+</span>
     `;
     el.addEventListener('click', ()=>{
-      const alreadyIn = state.builderExercises.some(e=> e.exercise===k.exercise && e.bodyPart===k.bodyPart);
-      if(alreadyIn){ showToast('이미 목록에 추가된 운동이에요'); return; }
-      const newEntry = { bodyPart: k.bodyPart, exercise: k.exercise, reps: hasReps ? k.reps : null, sets: hasSets ? k.sets : null };
-      const emptyIdx = state.builderExercises.findIndex(e=> e.exercise.trim()==='');
-      if(emptyIdx!==-1){
-        state.builderExercises[emptyIdx] = newEntry;
-      } else {
-        state.builderExercises.push(newEntry);
-      }
+      // 마지막으로 수행한 날의 세트를 모두(무게·횟수가 저마다 달라도) 그대로 가져온다
+      const entriesToAdd = k.entries.length>0 ? k.entries : [{weight:null, reps:null, sets:null}];
+      let addedCount = 0;
+      entriesToAdd.forEach(e=>{
+        const newEntry = { bodyPart: k.bodyPart, exercise: k.exercise, weight: e.weight, reps: e.reps, sets: e.sets };
+        const dup = state.builderExercises.some(x=>
+          x.exercise===newEntry.exercise && x.bodyPart===newEntry.bodyPart &&
+          x.weight===newEntry.weight && x.reps===newEntry.reps && x.sets===newEntry.sets
+        );
+        if(dup) return;
+        const emptyIdx = state.builderExercises.findIndex(x=> x.exercise.trim()==='');
+        if(emptyIdx!==-1){
+          state.builderExercises[emptyIdx] = newEntry;
+        } else {
+          state.builderExercises.push(newEntry);
+        }
+        addedCount++;
+      });
       renderBuilderRows();
-      showToast(`"${k.exercise}" 추가됨`);
+      if(addedCount===0){
+        showToast('이미 모두 추가된 세트예요');
+      } else if(addedCount>1){
+        showToast(`"${k.exercise}" ${addedCount}세트 그대로 추가됨`);
+      } else {
+        showToast(`"${k.exercise}" 추가됨`);
+      }
     });
     wrap.appendChild(el);
   });
@@ -1543,6 +1579,7 @@ function renderBuilderRows(){
     const row = document.createElement('div');
     row.className = 'builder-ex-row';
     const options = BODY_PARTS.map(bp=>`<option value="${bp}" ${bp===ex.bodyPart?'selected':''}>${bp}</option>`).join('');
+    const weightVal = (ex.weight===null || ex.weight===undefined) ? '' : ex.weight;
     const repsVal = (ex.reps===null || ex.reps===undefined) ? '' : ex.reps;
     const setsVal = (ex.sets===null || ex.sets===undefined) ? '' : ex.sets;
     row.innerHTML = `
@@ -1552,6 +1589,8 @@ function renderBuilderRows(){
         <div class="rm" data-idx="${idx}">✕</div>
       </div>
       <div class="builder-ex-row-bottom">
+        <input type="number" data-idx="${idx}" class="b-weight" placeholder="무게(kg)" inputmode="decimal" value="${weightVal}">
+        <span class="builder-x">×</span>
         <input type="number" data-idx="${idx}" class="b-reps" placeholder="목표 횟수" inputmode="numeric" value="${repsVal}">
         <span class="builder-x">×</span>
         <input type="number" data-idx="${idx}" class="b-sets" placeholder="목표 세트" inputmode="numeric" value="${setsVal}">
@@ -1565,6 +1604,9 @@ function renderBuilderRows(){
   wrap.querySelectorAll('.b-name').forEach(el=>{
     el.addEventListener('input', ()=>{ state.builderExercises[el.dataset.idx].exercise = el.value; });
   });
+  wrap.querySelectorAll('.b-weight').forEach(el=>{
+    el.addEventListener('input', ()=>{ state.builderExercises[el.dataset.idx].weight = el.value===''? null : Number(el.value); });
+  });
   wrap.querySelectorAll('.b-reps').forEach(el=>{
     el.addEventListener('input', ()=>{ state.builderExercises[el.dataset.idx].reps = el.value===''? null : Number(el.value); });
   });
@@ -1574,14 +1616,14 @@ function renderBuilderRows(){
   wrap.querySelectorAll('.rm').forEach(el=>{
     el.addEventListener('click', ()=>{
       state.builderExercises.splice(el.dataset.idx,1);
-      if(state.builderExercises.length===0) state.builderExercises.push({bodyPart:BODY_PARTS[0], exercise:'', reps:null, sets:null});
+      if(state.builderExercises.length===0) state.builderExercises.push({bodyPart:BODY_PARTS[0], exercise:'', weight:null, reps:null, sets:null});
       renderBuilderRows();
     });
   });
 }
 
 document.getElementById('builderAddRowBtn').addEventListener('click', ()=>{
-  state.builderExercises.push({bodyPart:BODY_PARTS[0], exercise:'', reps:null, sets:null});
+  state.builderExercises.push({bodyPart:BODY_PARTS[0], exercise:'', weight:null, reps:null, sets:null});
   renderBuilderRows();
 });
 
