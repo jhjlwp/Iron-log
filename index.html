@@ -185,14 +185,19 @@
   /* Today groups */
   .exercise-group{
     background:var(--bg-card); border:1px solid var(--hairline); border-radius:var(--radius);
-    padding:11px 12px; margin-bottom:8px;
+    padding:8px 10px; margin-bottom:6px;
   }
-  .exercise-group-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
-  .exercise-group-title{ font-size:15.5px; font-weight:700; }
+  .exercise-group-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; gap:8px; }
+  .exercise-group-title{
+    font-size:14px; font-weight:700;
+    flex:1 1 auto; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    letter-spacing:-0.2px;
+  }
   .bodypart-tag{
-    font-size:10.5px; font-weight:700; color:var(--text-faint);
-    background:var(--bg-elevated); padding:3px 8px; border-radius:6px;
-    text-transform:uppercase; letter-spacing:0.5px; margin-left:6px;
+    font-size:9.5px; font-weight:700; color:var(--text-faint);
+    background:var(--bg-elevated); padding:1px 5px; border-radius:5px;
+    text-transform:uppercase; letter-spacing:0.2px; margin-left:4px;
   }
   .sets-row{ display:flex; gap:8px; flex-wrap:wrap; }
   .plate-badge{
@@ -211,38 +216,38 @@
 
   .entries-col{ display:flex; flex-direction:column; }
   .entry-row{
-    display:flex; align-items:center; gap:10px;
-    padding:6px 2px; border-bottom:1px solid var(--hairline); cursor:pointer;
+    display:flex; align-items:center; gap:8px;
+    padding:4px 2px; border-bottom:1px solid var(--hairline); cursor:pointer;
     user-select:none; -webkit-user-select:none; transition:transform .12s ease, opacity .12s ease;
   }
   .entry-row:last-child{ border-bottom:none; }
   .entry-row.pressing{ transform:scale(0.97); opacity:0.8; }
   .mini-plate{
-    flex:0 0 auto; width:42px; height:42px; border-radius:50%;
+    flex:0 0 auto; width:34px; height:34px; border-radius:50%;
     background:radial-gradient(circle at 35% 30%, #FFFDF6, #F1E6C9 70%);
-    border:2.5px solid var(--plate);
+    border:2px solid var(--plate);
     box-shadow:inset 0 0 0 2px var(--bg), 0 0 0 1px var(--steel) inset;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
   }
   .mini-plate.empty{ border-color:var(--steel-light); }
-  .mini-plate .w{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; color:var(--plate); line-height:1; }
+  .mini-plate .w{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:9.5px; color:var(--plate); line-height:1; }
   .mini-plate.empty .w{ color:var(--text-faint); }
-  .mini-plate .r{ font-size:7.5px; color:var(--text-dim); margin-top:1px; }
+  .mini-plate .r{ font-size:6.5px; color:var(--text-dim); margin-top:0; }
   .entry-mid{ flex:1; min-width:0; }
-  .entry-sets{ font-size:13px; color:var(--text-dim); font-weight:600; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
-  .entry-memo{ font-size:12px; color:var(--text-faint); margin-top:2px; line-height:1.3; word-break:break-word; }
-  .mini-plate-pair{ display:flex; align-items:center; gap:4px; flex:0 0 auto; }
+  .entry-sets{ font-size:12px; color:var(--text-dim); font-weight:600; display:flex; align-items:center; flex-wrap:wrap; gap:5px; }
+  .entry-memo{ font-size:11px; color:var(--text-faint); margin-top:1px; line-height:1.25; word-break:break-word; }
+  .mini-plate-pair{ display:flex; align-items:center; gap:3px; flex:0 0 auto; }
   .ss-plus{ color:var(--text-faint); font-size:13px; font-weight:700; }
-  .ss-reps-pair{ font-size:13px; color:var(--text-dim); font-weight:600; }
-  .ss-plus-inline{ color:var(--text-faint); font-size:12px; font-weight:800; margin:0 5px; }
+  .ss-reps-pair{ font-size:12px; color:var(--text-dim); font-weight:600; }
+  .ss-plus-inline{ color:var(--text-faint); font-size:11px; font-weight:800; margin:0 4px; }
   .entry-sets-badge{
-    font-size:12px; font-weight:800; color:var(--plate);
-    background:var(--accent-dim); padding:2px 9px; border-radius:999px;
+    font-size:11px; font-weight:800; color:var(--plate);
+    background:var(--accent-dim); padding:1px 8px; border-radius:999px;
   }
   .ss-tag{
-    font-size:10px; font-weight:800; color:#FFFBF0; background:var(--plate);
-    padding:2px 7px; border-radius:6px; margin-left:6px; vertical-align:middle;
-    text-transform:uppercase; letter-spacing:0.5px;
+    font-size:9.5px; font-weight:800; color:#FFFBF0; background:var(--plate);
+    padding:2px 6px; border-radius:6px; margin-left:4px; vertical-align:middle;
+    text-transform:uppercase; letter-spacing:0.2px;
   }
   #supersetToggle.active{ background:var(--plate); border-color:var(--plate); color:#241C05; }
   #editSupersetToggle.active{ background:var(--plate); border-color:var(--plate); color:#241C05; }
@@ -1047,7 +1052,7 @@ function buildExerciseGroupsHtml(entriesArr){
   });
   return groups.map(g=>{
     const titleHtml = g.superset
-      ? `${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span> <span style="color:var(--text-faint); margin:0 2px;">＋</span> ${escapeHtml(g.superset.exercise)}<span class="bodypart-tag">${g.superset.bodyPart}</span>`
+      ? `${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span><span style="color:var(--text-faint); margin:0 3px;">＋</span>${escapeHtml(g.superset.exercise)}<span class="bodypart-tag">${g.superset.bodyPart}</span>`
       : `${escapeHtml(g.exercise)}<span class="bodypart-tag">${g.bodyPart}</span>`;
     const entriesHtml = g.entries.map(s=>{
       const hasReps = s.reps!==null && s.reps!==undefined && s.reps!=='';
