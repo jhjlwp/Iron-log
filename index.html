@@ -215,12 +215,30 @@
   .plate-badge .s{ font-size:8.5px; color:var(--text-faint); margin-top:1px; }
 
   .entries-col{ display:flex; flex-direction:column; }
+  .entry-swipe{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--hairline);
+  }
+  .entry-swipe:last-child{ border-bottom:none; }
+  .entry-actions{
+    position:absolute; top:0; right:0; bottom:0;
+    display:flex; align-items:stretch;
+  }
+  .entry-action{
+    border:none; font-size:11.5px; font-weight:800; padding:0 16px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    color:#FFFBF0; white-space:nowrap;
+  }
+  .entry-action.copy{ background:var(--plate); }
+  .entry-action.delete{ background:var(--accent); color:#1D0C0A; }
   .entry-row{
     display:flex; align-items:center; gap:8px;
-    padding:4px 2px; border-bottom:1px solid var(--hairline); cursor:pointer;
-    user-select:none; -webkit-user-select:none; transition:transform .12s ease, opacity .12s ease;
+    padding:4px 2px; cursor:pointer;
+    background:var(--bg-card); position:relative;
+    user-select:none; -webkit-user-select:none;
+    touch-action:pan-y;
+    transition:transform .18s ease, opacity .12s ease;
   }
-  .entry-row:last-child{ border-bottom:none; }
   .entry-row.pressing{ transform:scale(0.97); opacity:0.8; }
   .mini-plate{
     flex:0 0 auto; width:34px; height:34px; border-radius:50%;
@@ -1082,12 +1100,18 @@ function buildExerciseGroupsHtml(entriesArr){
       }
 
       return `
-        <div class="entry-row" data-id="${s.id}">
-          <div class="mini-plate-pair">
-            ${miniPlateHtml(s.weight)}
-            ${s.superset ? '<span class="ss-plus">＋</span>' + miniPlateHtml(s.superset.weight) : ''}
+        <div class="entry-swipe">
+          <div class="entry-actions">
+            <button type="button" class="entry-action copy" data-action="copy" data-id="${s.id}">복사</button>
+            <button type="button" class="entry-action delete" data-action="delete" data-id="${s.id}">삭제</button>
           </div>
-          <div class="entry-mid">${midHtml}</div>
+          <div class="entry-row" data-id="${s.id}">
+            <div class="mini-plate-pair">
+              ${miniPlateHtml(s.weight)}
+              ${s.superset ? '<span class="ss-plus">＋</span>' + miniPlateHtml(s.superset.weight) : ''}
+            </div>
+            <div class="entry-mid">${midHtml}</div>
+          </div>
         </div>
       `;
     }).join('');
@@ -1115,7 +1139,7 @@ function renderTodayList(){
     return;
   }
   wrap.innerHTML = buildExerciseGroupsHtml(dayLogs);
-  attachEntryRowInteractions(wrap, { longPress: duplicateLogEntry });
+  attachEntryRowInteractions(wrap, { swipe: true });
 }
 
 async function duplicateLogEntry(id){
@@ -1129,35 +1153,118 @@ async function duplicateLogEntry(id){
   showToast('세트를 복사했어요 📋');
 }
 
-function attachEntryRowInteractions(wrap, { longPress } = {}){
+async function deleteLogEntry(id){
+  logs = logs.filter(l=>l.id!==id);
+  await saveLogs();
+  renderAll();
+  showToast('세트를 삭제했어요');
+}
+
+function attachEntryRowInteractions(wrap, { longPress, swipe } = {}){
+  const ACTION_WIDTH = 132;
+  let openSwipeRow = null;
+
+  function closeSwipe(rowEl){
+    if(!rowEl) return;
+    rowEl.style.transform = 'translateX(0)';
+    rowEl.dataset.swipeOpen = '0';
+    if(openSwipeRow===rowEl) openSwipeRow = null;
+  }
+
+  // 액션 버튼(복사/삭제) 클릭 처리
+  if(swipe){
+    wrap.querySelectorAll('.entry-action').forEach(btn=>{
+      btn.addEventListener('click', async (e)=>{
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const action = btn.dataset.action;
+        const rowEl = btn.closest('.entry-swipe')?.querySelector('.entry-row');
+        closeSwipe(rowEl);
+        if(action==='copy') await duplicateLogEntry(id);
+        else if(action==='delete') await deleteLogEntry(id);
+      });
+    });
+  }
+
   wrap.querySelectorAll('.entry-row').forEach(el=>{
-    if(!longPress){
+    if(!longPress && !swipe){
       el.addEventListener('click', ()=> openEdit(el.dataset.id));
       return;
     }
+
     let timer = null;
     let firedLongPress = false;
+    let startX = 0, startY = 0, dragging = false, decided = false, isHorizontal = false, currentX = 0;
 
-    const start = (e)=>{
-      if(e.type==='mousedown' && e.button!==0) return; // 우클릭은 별도 처리
+    const start = (clientX, clientY, e)=>{
+      if(e && e.type==='mousedown' && e.button!==0) return; // 우클릭은 별도 처리
       firedLongPress = false;
+      dragging = true; decided = false; isHorizontal = false;
+      startX = clientX; startY = clientY; currentX = 0;
+      if(swipe) el.style.transition = 'none';
       el.classList.add('pressing');
-      timer = setTimeout(()=>{
-        firedLongPress = true;
-        el.classList.remove('pressing');
-        if(navigator.vibrate) navigator.vibrate(15);
-        longPress(el.dataset.id);
-      }, 550);
+      if(longPress){
+        timer = setTimeout(()=>{
+          if(isHorizontal) return; // 스와이프 중이면 롱프레스 무시
+          firedLongPress = true;
+          el.classList.remove('pressing');
+          if(navigator.vibrate) navigator.vibrate(15);
+          longPress(el.dataset.id);
+        }, 550);
+      }
     };
-    const cancel = ()=>{
+
+    const move = (clientX, clientY, e)=>{
+      if(!dragging) return;
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+      if(!decided){
+        if(Math.abs(dx) > 8 || Math.abs(dy) > 8){
+          decided = true;
+          clearTimeout(timer);
+          el.classList.remove('pressing');
+          isHorizontal = swipe && Math.abs(dx) > Math.abs(dy) && dx < 0 || (swipe && el.dataset.swipeOpen==='1' && Math.abs(dx) > Math.abs(dy));
+          if(isHorizontal && openSwipeRow && openSwipeRow!==el) closeSwipe(openSwipeRow);
+        } else {
+          return;
+        }
+      }
+      if(!isHorizontal) return;
+      if(e && e.cancelable) e.preventDefault();
+      const base = el.dataset.swipeOpen==='1' ? -ACTION_WIDTH : 0;
+      let x = base + dx;
+      x = Math.max(-ACTION_WIDTH, Math.min(0, x));
+      currentX = x;
+      el.style.transform = `translateX(${x}px)`;
+    };
+
+    const end = ()=>{
+      if(!dragging) return;
+      dragging = false;
       clearTimeout(timer);
       el.classList.remove('pressing');
+      if(swipe) el.style.transition = '';
+
+      if(decided && isHorizontal){
+        if(currentX < -ACTION_WIDTH/2){
+          el.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+          el.dataset.swipeOpen = '1';
+          openSwipeRow = el;
+        } else {
+          closeSwipe(el);
+        }
+      }
     };
+
     const handleClick = ()=>{
       if(firedLongPress){ firedLongPress = false; return; }
+      if(decided && isHorizontal){ return; } // 스와이프 동작이었으면 클릭 무시
+      if(el.dataset.swipeOpen==='1'){ closeSwipe(el); return; } // 열려있으면 닫기만
       openEdit(el.dataset.id);
     };
+
     const handleContextMenu = (e)=>{
+      if(!longPress) return;
       e.preventDefault();
       clearTimeout(timer);
       el.classList.remove('pressing');
@@ -1166,13 +1273,17 @@ function attachEntryRowInteractions(wrap, { longPress } = {}){
       setTimeout(()=>{ firedLongPress = false; }, 0);
     };
 
-    el.addEventListener('touchstart', start, { passive:true });
-    el.addEventListener('touchend', cancel);
-    el.addEventListener('touchmove', cancel);
-    el.addEventListener('touchcancel', cancel);
-    el.addEventListener('mousedown', start);
-    el.addEventListener('mouseup', cancel);
-    el.addEventListener('mouseleave', cancel);
+    el.addEventListener('touchstart', (e)=>{ const t=e.touches[0]; start(t.clientX, t.clientY, e); }, { passive:true });
+    el.addEventListener('touchmove', (e)=>{ const t=e.touches[0]; move(t.clientX, t.clientY, e); }, { passive:false });
+    el.addEventListener('touchend', end);
+    el.addEventListener('touchcancel', end);
+    el.addEventListener('mousedown', (e)=>{
+      start(e.clientX, e.clientY, e);
+      const onMove = (ev)=> move(ev.clientX, ev.clientY, ev);
+      const onUp = ()=>{ end(); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    });
     el.addEventListener('contextmenu', handleContextMenu);
     el.addEventListener('click', handleClick);
   });
