@@ -484,6 +484,19 @@
         </div>
         <button class="btn btn-ghost" style="width:100%;" id="switchCodeBtn">이 코드로 전환하기</button>
       </div>
+
+      <div class="section-label">다른 코드의 기록 합치기</div>
+      <div class="card">
+        <p style="color:var(--text-faint); font-size:12px; line-height:1.5; margin:0 0 10px;">
+          예전에 쓰던 다른 코드에 기록이 남아있다면, 여기에 그 코드를 입력해서 지금 보고 있는 코드로 그대로 합칠 수 있어요. (중복 기록은 자동으로 걸러져요)
+        </p>
+        <div class="field">
+          <label>합칠 코드 입력</label>
+          <input type="text" id="mergeCodeInput" placeholder="예: CD34EF56" style="text-transform:uppercase;">
+        </div>
+        <button class="btn btn-plate" style="width:100%;" id="mergeCodeBtn">이 코드의 기록을 지금 코드로 합치기</button>
+      </div>
+
       <button class="btn btn-ghost" style="width:100%; margin-top:16px;" id="closeSyncPanelBtn">닫기</button>
     </div>
   </div>
@@ -732,7 +745,7 @@
       아래 나오는 firebaseConfig 값을 그대로 복사해서 아래에 붙여넣으세요.
    ===================================================================== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBjxYCuM3_78kKw5lgMYOfF6cpsjztCeu8",
@@ -799,19 +812,67 @@ function genCode(){
   for(let i=0;i<8;i++) s += chars[Math.floor(Math.random()*chars.length)];
   return s;
 }
-function dataRef(code){ return doc(db, 'workoutApps', code); }
+
+// 기존(구버전) 저장 방식: workoutApps/{code} 문서 하나에 logs/routines 배열 전체를 저장
+function legacyDocRef(code){ return doc(db, 'workoutApps', code); }
+// 새 저장 방식: 기록 한 건 = 문서 한 개. 이렇게 해야 기록을 추가/수정할 때
+// 그 항목 하나만 저장되고, 다른 기록에는 전혀 영향을 주지 않습니다.
+function logDocRef(id, code=syncCode){ return doc(db, 'workoutApps', code, 'logs', id); }
+function routineDocRef(id, code=syncCode){ return doc(db, 'workoutApps', code, 'routines', id); }
+
+let dataLoaded = false; // 데이터를 정상적으로 불러오기 전에는 저장을 막기 위한 안전장치
+
+// 특정 코드의 기록/루틴을 전부 읽어온다 (새 구조 우선, 없으면 예전 구조에서 읽음)
+async function fetchAllLogsAndRoutinesForCode(code){
+  const logsSnap = await getDocs(collection(db, 'workoutApps', code, 'logs'));
+  let ls = logsSnap.docs.map(d=>({ id: d.id, ...d.data() }));
+  const routinesSnap = await getDocs(collection(db, 'workoutApps', code, 'routines'));
+  let rs = routinesSnap.docs.map(d=>({ id: d.id, ...d.data() }));
+  if(ls.length===0 && rs.length===0){
+    const legacySnap = await getDoc(legacyDocRef(code));
+    if(legacySnap.exists()){
+      const d = legacySnap.data();
+      ls = d.logs || [];
+      rs = d.routines || [];
+    }
+  }
+  return { logs: ls, routines: rs };
+}
 
 async function loadData(){
   try{
-    const snap = await getDoc(dataRef(syncCode));
-    if(snap.exists()){
-      const d = snap.data();
-      logs = d.logs || [];
-      routines = d.routines || [];
-    } else {
-      logs = []; routines = [];
-      await setDoc(dataRef(syncCode), { logs: [], routines: [], updatedAt: Date.now() });
+    const logsSnap = await getDocs(collection(db, 'workoutApps', syncCode, 'logs'));
+    let loadedLogs = logsSnap.docs.map(d=>({ id: d.id, ...d.data() }));
+    const routinesSnap = await getDocs(collection(db, 'workoutApps', syncCode, 'routines'));
+    let loadedRoutines = routinesSnap.docs.map(d=>({ id: d.id, ...d.data() }));
+
+    // 새 구조에 아무것도 없으면, 예전 방식(배열 통째 저장)으로 남아있는 데이터가 있는지 확인하고
+    // 있으면 새 구조로 한 번만 옮겨줍니다 (기존 사용자의 데이터 보존용).
+    if(loadedLogs.length===0 && loadedRoutines.length===0){
+      const legacySnap = await getDoc(legacyDocRef(syncCode));
+      if(legacySnap.exists()){
+        const d = legacySnap.data();
+        const legacyLogs = d.logs || [];
+        const legacyRoutines = d.routines || [];
+        if(legacyLogs.length>0 || legacyRoutines.length>0){
+          const batch = writeBatch(db);
+          legacyLogs.forEach(l=>{
+            const { id, ...data } = l;
+            batch.set(logDocRef(id || uid()), data);
+          });
+          legacyRoutines.forEach(r=>{
+            const { id, ...data } = r;
+            batch.set(routineDocRef(id || uid()), data);
+          });
+          await batch.commit();
+          loadedLogs = legacyLogs;
+          loadedRoutines = legacyRoutines;
+        }
+      }
     }
+
+    logs = loadedLogs;
+    routines = loadedRoutines;
     logs.forEach(l=>{
       if(l.sets===undefined) l.sets = 1; // 기존(구버전) 데이터는 세트수 1로 간주
       if(l.weight===undefined) l.weight = null;
@@ -819,23 +880,69 @@ async function loadData(){
       if(l.memo===undefined) l.memo = '';
       if(l.superset===undefined) l.superset = null;
     });
+    dataLoaded = true;
   }catch(e){
     console.error(e);
-    showToast('불러오기 실패 - 인터넷 연결 또는 Firebase 설정을 확인하세요');
-    logs = []; routines = [];
+    dataLoaded = false;
+    // 주의: 여기서 logs/routines를 빈 배열로 초기화하지 않습니다.
+    // 일시적인 네트워크 오류로 불러오기가 실패했을 때 이후 저장이 실행되면
+    // 서버의 실제 데이터를 빈 값으로 덮어써버릴 수 있기 때문입니다.
+    showToast('불러오기 실패 - 인터넷 연결 상태를 확인하고 새로고침해주세요');
   }
 }
-async function saveData(){
+
+// ---- 기록(log) 저장/삭제: 항상 "그 항목 하나"만 씁니다 ----
+async function saveLogEntry(entry){
+  if(!dataLoaded){ showToast('아직 데이터를 불러오는 중이에요. 잠시 후 다시 시도해주세요'); return; }
   try{
-    await setDoc(dataRef(syncCode), { logs, routines, updatedAt: Date.now() }, { merge: true });
-  }catch(e){
-    console.error(e);
-    showToast('저장 실패 - 인터넷 연결을 확인해주세요');
-  }
+    const { id, ...data } = entry;
+    await setDoc(logDocRef(id), data);
+  }catch(e){ console.error(e); showToast('저장 실패 - 인터넷 연결을 확인해주세요'); }
 }
-// 이전 코드와의 호환을 위해 saveLogs/saveRoutines 이름을 그대로 유지
-async function saveLogs(){ await saveData(); }
-async function saveRoutines(){ await saveData(); }
+async function removeLogEntry(id){
+  if(!dataLoaded){ showToast('아직 데이터를 불러오는 중이에요. 잠시 후 다시 시도해주세요'); return; }
+  try{ await deleteDoc(logDocRef(id)); }
+  catch(e){ console.error(e); showToast('삭제 실패 - 인터넷 연결을 확인해주세요'); }
+}
+async function saveLogEntriesBatch(entries){
+  if(entries.length===0) return;
+  if(!dataLoaded){ showToast('아직 데이터를 불러오는 중이에요. 잠시 후 다시 시도해주세요'); return; }
+  try{
+    const batch = writeBatch(db);
+    entries.forEach(entry=>{
+      const { id, ...data } = entry;
+      batch.set(logDocRef(id), data);
+    });
+    await batch.commit();
+  }catch(e){ console.error(e); showToast('저장 실패 - 인터넷 연결을 확인해주세요'); }
+}
+
+// ---- 루틴(routine) 저장/삭제: 항상 "그 루틴 하나"만 씁니다 ----
+async function saveRoutineEntry(routine){
+  if(!dataLoaded){ showToast('아직 데이터를 불러오는 중이에요. 잠시 후 다시 시도해주세요'); return; }
+  try{
+    const { id, ...data } = routine;
+    await setDoc(routineDocRef(id), data);
+  }catch(e){ console.error(e); showToast('저장 실패 - 인터넷 연결을 확인해주세요'); }
+}
+async function removeRoutineEntry(id){
+  if(!dataLoaded){ showToast('아직 데이터를 불러오는 중이에요. 잠시 후 다시 시도해주세요'); return; }
+  try{ await deleteDoc(routineDocRef(id)); }
+  catch(e){ console.error(e); showToast('삭제 실패 - 인터넷 연결을 확인해주세요'); }
+}
+async function saveRoutineEntriesBatch(routinesArr){
+  if(routinesArr.length===0) return;
+  if(!dataLoaded){ showToast('아직 데이터를 불러오는 중이에요. 잠시 후 다시 시도해주세요'); return; }
+  try{
+    const batch = writeBatch(db);
+    routinesArr.forEach(r=>{
+      const { id, ...data } = r;
+      batch.set(routineDocRef(id), data);
+    });
+    await batch.commit();
+  }catch(e){ console.error(e); showToast('저장 실패 - 인터넷 연결을 확인해주세요'); }
+}
+
 
 /* ---------------- SYNC UI ---------------- */
 function showSyncGate(msg){
@@ -888,6 +995,43 @@ document.getElementById('switchCodeBtn').addEventListener('click', async ()=>{
   document.getElementById('switchCodeInput').value = '';
   showToast('코드를 전환하는 중...');
   await startApp();
+});
+
+document.getElementById('mergeCodeBtn').addEventListener('click', async ()=>{
+  const sourceCode = document.getElementById('mergeCodeInput').value.trim().toUpperCase();
+  if(!sourceCode){ showToast('합칠 코드를 입력해주세요'); return; }
+  if(sourceCode === syncCode){ showToast('지금 코드와 같아요'); return; }
+
+  showToast('불러오는 중...');
+  let sourceLogs = [];
+  let sourceRoutines = [];
+  try{
+    const fetched = await fetchAllLogsAndRoutinesForCode(sourceCode);
+    sourceLogs = fetched.logs;
+    sourceRoutines = fetched.routines;
+    if(sourceLogs.length===0 && sourceRoutines.length===0){
+      showToast('그 코드로 저장된 데이터가 없어요');
+      return;
+    }
+  }catch(e){
+    console.error(e);
+    showToast('불러오기 실패 - 코드나 인터넷 연결을 확인해주세요');
+    return;
+  }
+
+  const existingLogIds = new Set(logs.map(l=>l.id));
+  const newLogs = sourceLogs.filter(l=> !existingLogIds.has(l.id));
+  logs = logs.concat(newLogs);
+
+  const existingRoutineIds = new Set(routines.map(r=>r.id));
+  const newRoutines = sourceRoutines.filter(r=> !existingRoutineIds.has(r.id));
+  routines = routines.concat(newRoutines);
+
+  await saveLogEntriesBatch(newLogs);
+  await saveRoutineEntriesBatch(newRoutines);
+  document.getElementById('mergeCodeInput').value = '';
+  renderAll();
+  showToast(`기록 ${newLogs.length}건, 루틴 ${newRoutines.length}개를 합쳤어요`);
 });
 
 /* ---------------- HEADER ---------------- */
@@ -1148,14 +1292,14 @@ async function duplicateLogEntry(id){
   const copy = { ...entry, id: uid() };
   if(entry.superset) copy.superset = { ...entry.superset };
   logs.push(copy);
-  await saveLogs();
+  await saveLogEntry(copy);
   renderAll();
   showToast('세트를 복사했어요 📋');
 }
 
 async function deleteLogEntry(id){
   logs = logs.filter(l=>l.id!==id);
-  await saveLogs();
+  await removeLogEntry(id);
   renderAll();
   showToast('세트를 삭제했어요');
 }
@@ -1323,20 +1467,19 @@ document.getElementById('copyDateBtn').addEventListener('click', async ()=>{
   if(sourceDate === state.selectedDate){ showToast('현재 선택된 날짜와 같아요'); return; }
   const sourceEntries = logs.filter(l=>l.date===sourceDate);
   if(sourceEntries.length===0){ showToast('그 날짜엔 복사할 기록이 없어요'); return; }
-  sourceEntries.forEach(l=>{
-    logs.push({
-      id: uid(),
-      date: state.selectedDate,
-      bodyPart: l.bodyPart,
-      exercise: l.exercise,
-      weight: l.weight,
-      reps: l.reps,
-      sets: l.sets,
-      memo: l.memo,
-      superset: l.superset ? { ...l.superset } : null
-    });
-  });
-  await saveLogs();
+  const newEntries = sourceEntries.map(l=>({
+    id: uid(),
+    date: state.selectedDate,
+    bodyPart: l.bodyPart,
+    exercise: l.exercise,
+    weight: l.weight,
+    reps: l.reps,
+    sets: l.sets,
+    memo: l.memo,
+    superset: l.superset ? { ...l.superset } : null
+  }));
+  logs = logs.concat(newEntries);
+  await saveLogEntriesBatch(newEntries);
   renderAll();
   showToast(`${sourceEntries.length}건을 복사했어요`);
 });
@@ -1363,7 +1506,7 @@ document.getElementById('addSetBtn').addEventListener('click', async ()=>{
     };
   }
 
-  logs.push({
+  const newEntry = {
     id: uid(),
     date: state.selectedDate,
     bodyPart: state.logBodyPart,
@@ -1373,8 +1516,9 @@ document.getElementById('addSetBtn').addEventListener('click', async ()=>{
     sets: sets==='' ? null : Number(sets),
     memo,
     superset
-  });
-  await saveLogs();
+  };
+  logs.push(newEntry);
+  await saveLogEntry(newEntry);
   document.getElementById('weightInput').value = '';
   document.getElementById('repsInput').value = '';
   document.getElementById('setsInput').value = '';
@@ -1469,14 +1613,15 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   entry.sets = sets==='' ? null : Number(sets);
   entry.memo = memo;
   entry.superset = superset;
-  await saveLogs();
+  await saveLogEntry(entry);
   showToast('수정됐어요');
   backFromEdit();
 });
 
 document.getElementById('editDeleteBtn').addEventListener('click', async ()=>{
-  logs = logs.filter(l=>l.id!==state.editingEntryId);
-  await saveLogs();
+  const idToDelete = state.editingEntryId;
+  logs = logs.filter(l=>l.id!==idToDelete);
+  await removeLogEntry(idToDelete);
   showToast('기록을 삭제했어요');
   backFromEdit();
 });
@@ -1714,8 +1859,9 @@ function renderRoutineList(){
   });
   wrap.querySelectorAll('[data-del]').forEach(el=>{
     el.addEventListener('click', async ()=>{
-      routines = routines.filter(r=>r.id!==el.dataset.del);
-      await saveRoutines();
+      const idToDelete = el.dataset.del;
+      routines = routines.filter(r=>r.id!==idToDelete);
+      await removeRoutineEntry(idToDelete);
       renderRoutineList();
       renderRoutinePickRow();
       showToast('루틴을 삭제했어요');
@@ -1920,13 +2066,16 @@ document.getElementById('builderSaveBtn').addEventListener('click', async ()=>{
   const exs = state.builderExercises.filter(e=>e.exercise.trim()!=='');
   if(!name){ showToast('루틴 이름을 입력해주세요'); return; }
   if(exs.length===0){ showToast('운동을 하나 이상 추가해주세요'); return; }
+  let savedRoutine;
   if(state.editingRoutineId){
     const r = routines.find(r=>r.id===state.editingRoutineId);
     r.name = name; r.exercises = exs;
+    savedRoutine = r;
   } else {
-    routines.push({ id: uid(), name, exercises: exs });
+    savedRoutine = { id: uid(), name, exercises: exs };
+    routines.push(savedRoutine);
   }
-  await saveRoutines();
+  await saveRoutineEntry(savedRoutine);
   showToast('루틴이 저장됐어요');
   switchView('routine');
 });
